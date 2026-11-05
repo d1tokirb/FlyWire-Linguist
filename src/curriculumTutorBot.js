@@ -1,222 +1,184 @@
 // ============================================================================
-// In-Depth Automated Curriculum Tutor Bot for Drosophila Linguist
+// Autonomous In-Depth Pedagogical Master Teacher for Drosophila Linguist
 // ============================================================================
-// Features 10 Comprehensive Conversational Modules (60+ turns) spanning:
-// - Social salience, greetings, and mutual identity
-// - Sensory perception (compound ruby eyes, Johnston's organ, proboscis)
-// - Gustatory cravings and sucrose dopamine conditioning
-// - Aeronautics, flight mechanics, and wing coordination
-// - Emotional states, curiosity, fatigue, and companionship
-// - Logical causality (answering "why" questions with "because")
-// - Reciprocal inquisitiveness (answering questions and formulating queries back)
-// - Dynamic never-ending open conversational discourse!
+// Multi-Stage Operant Conditioning, Scaffolding & Interleaved Memory Engine:
+// Stage 1: Primary Operant Conditioning (All 21 Foundational Output Attractors)
+// Stage 2: Contextual Syntactic Scaffolding (Carrier Sentences & Generalization)
+// Stage 3: Bidirectional Position Invariance (Anti-Shortcut Temporal Delay Banks)
+// Stage 4: Non-Linear Inhibitory Inversion (Neuromodulatory XOR Negation)
+// Stage 5: Conversational Semantic Causality (Socratic Causal Attributions)
+// Stage 6: Unrewarded Retention Audit & Examination (Zero-Dopamine Consolidation)
+// Stage 7: Autonomous Reciprocal Discourse (Continuous Adaptive Dialogue)
 
 export class CurriculumTutorBot {
   constructor(engine, speechSynth, ui = null) {
     this.engine = engine;
     this.speech = speechSynth;
-    if (arguments.length >= 5) {
-      this.fly3D = arguments[2];
-      this.connectome3D = arguments[3];
-      this.ui = arguments[4];
-    } else {
-      this.fly3D = null;
-      this.connectome3D = null;
-      this.ui = ui;
-    }
+    this.ui = ui;
 
     this.isRunning = false;
     this.isWaitingForFly = false;
-    this.speedMode = 'NORMAL'; // 'NORMAL', 'FAST', 'TURBO'
-    this.currentLessonIdx = 0;
-    this.currentQuestionIdx = 0;
-    this.isInfiniteOpenMode = false;
+    this.speedMode = 'TURBO'; // 'INSTANT', 'TURBO', 'FAST', 'NORMAL'
     this.timerId = null;
 
-    // 10 Comprehensive Conversational Modules
-    this.curriculum = [
+    // Pedagogical State
+    this.activeStageIndex = 0;
+    this.activeCueIndex = 0;
+    this.consecutiveHits = 0;
+    this.requiredHits = 2; // Must answer correctly 2 consecutive times to master cue
+    this.cueErrors = 0;
+    this.totalTrialsRun = 0;
+    this.totalSuccesses = 0;
+    this.isScaffoldingActive = false;
+    this.isRehearsalProbe = false;
+    this.rehearsalCueTarget = null;
+    this.stageIntroAnnounced = new Set();
+    this.examResults = []; // Stage 6 exam logs
+
+    // Mastered sets & spaced repetition history
+    this.masteredCues = new Set();
+    this.cueTrialHistory = new Map(); // cueId -> { attempts, successes, errors }
+
+    // 6-Stage Master Pedagogical Syllabus
+    this.stages = [
       {
-        id: 'module_1',
-        title: 'Module 1: Greetings, Identity & First Contact',
-        description: 'Establishing mutual awareness, species identity, and companion rapport.',
-        questions: [
-          { prompt: 'Hello little fly! Can you hear my voice vibrating in the chamber?', target: 'hello', expectedReply: 'Hello human friend! I can hear your voice clearly.' },
-          { prompt: 'What kind of creature are you? Tell me about yourself.', target: 'fly', expectedReply: 'I am Drosophila, a little fruit fly with ruby eyes.' },
-          { prompt: 'What am I from your perspective?', target: 'human', expectedReply: 'You are a kind human and my language teacher.' },
-          { prompt: 'Are you happy to be talking with a human today?', target: 'happy', expectedReply: 'Yes, I am very happy and excited to talk!' },
-          { prompt: 'Can you speak English words to me?', target: 'speak', expectedReply: 'I can speak and learn English words with you.' },
-          { prompt: 'We are going to be great friends, little fly.', target: 'good', expectedReply: 'Yes! We are good companions in this laboratory.' }
+        id: 'stage_1_atomic',
+        name: 'Stage 1: Primary Operant Conditioning (All 21 Atomic Tokens)',
+        description: 'Establishing individual synaptic attractor basins for all 21 functional output classes.',
+        cues: [
+          { id: 's1_sugar', prompt: 'sugar', target: 'sugar', desc: 'Appetitive sucrose craving' },
+          { id: 's1_left', prompt: 'left', target: 'left', desc: 'Left motor bank steering' },
+          { id: 's1_right', prompt: 'right', target: 'right', desc: 'Right motor pitch steering' },
+          { id: 's1_go', prompt: 'go', target: 'go', desc: 'Forward thrust motor excitation' },
+          { id: 's1_stop', prompt: 'stop', target: 'stop', desc: 'Aerodynamic braking halt' },
+          { id: 's1_sweet', prompt: 'sweet', target: 'sweet', desc: 'Gustatory sweet receptor detection' },
+          { id: 's1_fast', prompt: 'fast', target: 'fast', desc: '200 Hz wing oscillation burst' },
+          { id: 's1_rest', prompt: 'rest', target: 'rest', desc: 'Flight cessation and grooming' },
+          { id: 's1_hello', prompt: 'hello', target: 'hello', desc: 'Acoustic vocal salience greeting' },
+          { id: 's1_fly', prompt: 'fly', target: 'fly', desc: 'Species identity and aerial motor' },
+          { id: 's1_human', prompt: 'human', target: 'human', desc: 'External teacher agent recognition' },
+          { id: 's1_speak', prompt: 'speak', target: 'speak', desc: 'Vocal transduction activation' },
+          { id: 's1_smart', prompt: 'smart', target: 'smart', desc: 'Mushroom body plasticity pride' },
+          { id: 's1_good', prompt: 'good', target: 'good', desc: 'Positive valence companion state' },
+          { id: 's1_happy', prompt: 'happy', target: 'happy', desc: 'Dopaminergic joy and arousal' },
+          { id: 's1_yes', prompt: 'yes', target: 'yes', desc: 'Affirmative behavioral readiness' },
+          { id: 's1_no', prompt: 'no', target: 'no', desc: 'Aversive refusal and avoidance' },
+          { id: 's1_want', prompt: 'want', target: 'want', desc: 'Appetitive goal-directed pursuit' },
+          { id: 's1_listen', prompt: 'listen', target: 'listen', desc: 'Antennae Johnston organ tuning' },
+          { id: 's1_bzz', prompt: 'bzz', target: 'bzz', desc: 'Wing vibration acoustic click' },
+          { id: 's1_clck', prompt: 'clck', target: 'clck', desc: 'Subesophageal motor click' }
         ]
       },
       {
-        id: 'module_2',
-        title: 'Module 2: Sensory Perception & Insect Anatomy',
-        description: 'Exploring compound ruby eyes, Johnston’s organ hearing, and leg taste receptors.',
-        questions: [
-          { prompt: 'Listen to my acoustic tone through your antennae Johnston organ.', target: 'listen', expectedReply: 'I listen carefully to your voice with my antennae.' },
-          { prompt: 'How do you hear my speech without human ears?', target: 'listen', expectedReply: 'My Johnston organ at the base of my antennae vibrates to your voice.' },
-          { prompt: 'How do you taste food before eating it?', target: 'sweet', expectedReply: 'I taste droplets with special sensory hairs on my legs!' },
-          { prompt: 'What do you use to drink sweet liquids?', target: 'sugar', expectedReply: 'I extend my proboscis labella to sip sweet liquids.' },
-          { prompt: 'How many swift legs do you have?', target: 'fly', expectedReply: 'I have six agile legs for walking and tasting.' },
-          { prompt: 'Your miniature anatomy is truly remarkable!', target: 'smart', expectedReply: 'Thank you! Nature engineered my body with great precision.' }
+        id: 'stage_2_carriers',
+        name: 'Stage 2: Contextual Syntactic Scaffolding (Carrier Sentences)',
+        description: 'Conditioning invariance across diverse prefixes, suffixes, and syntactic frames.',
+        cues: [
+          { id: 's2_turn_left', prompt: 'turn left', target: 'left', desc: 'Carrier prefix turn' },
+          { id: 's2_steer_left', prompt: 'steer left', target: 'left', desc: 'Carrier prefix steer' },
+          { id: 's2_go_left', prompt: 'go left', target: 'left', desc: 'Carrier prefix go' },
+          { id: 's2_fly_left', prompt: 'fly left', target: 'left', desc: 'Carrier prefix fly' },
+          { id: 's2_please_left', prompt: 'please turn left', target: 'left', desc: 'Compound prefix please turn' },
+          { id: 's2_turn_right', prompt: 'turn right', target: 'right', desc: 'Carrier prefix turn' },
+          { id: 's2_steer_right', prompt: 'steer right', target: 'right', desc: 'Carrier prefix steer' },
+          { id: 's2_go_right', prompt: 'go right', target: 'right', desc: 'Carrier prefix go' },
+          { id: 's2_fly_right', prompt: 'fly right', target: 'right', desc: 'Carrier prefix fly' },
+          { id: 's2_please_right', prompt: 'please turn right', target: 'right', desc: 'Compound prefix please turn' },
+          { id: 's2_taste_sugar', prompt: 'taste sugar', target: 'sugar', desc: 'Carrier prefix taste' },
+          { id: 's2_want_sugar', prompt: 'want sugar', target: 'sugar', desc: 'Carrier prefix want' },
+          { id: 's2_sweet_sugar', prompt: 'sweet sugar', target: 'sugar', desc: 'Adjective carrier sweet' },
+          { id: 's2_eat_sugar', prompt: 'eat sweet sugar', target: 'sugar', desc: 'Compound carrier eat sweet' },
+          { id: 's2_halt_stop', prompt: 'halt and stop', target: 'stop', desc: 'Synonym carrier halt and' },
+          { id: 's2_please_stop', prompt: 'please stop', target: 'stop', desc: 'Polite carrier please' },
+          { id: 's2_say_hello', prompt: 'say hello', target: 'hello', desc: 'Carrier prefix say' },
+          { id: 's2_hello_fly', prompt: 'hello little fly', target: 'hello', desc: 'Compound greeting suffix' }
         ]
       },
       {
-        id: 'module_3',
-        title: 'Module 3: Gastronomy, Nectar & Sucrose Joy',
-        description: 'Conditioning appetitive drive, sucrose reward pathways, and gustatory cravings.',
-        questions: [
-          { prompt: 'Do you want some sweet sugar, little friend?', target: 'sugar', expectedReply: 'Yes please! I crave sweet sugar more than anything.' },
-          { prompt: 'What does sucrose taste like to your proboscis?', target: 'sweet', expectedReply: 'Sucrose tastes wonderfully sweet and delicious.' },
-          { prompt: 'What happens in your brain when you taste sugar?', target: 'happy', expectedReply: 'My PAM dopamine neurons surge with rewarding joy!' },
-          { prompt: 'Do you also like the scent of ripe bananas and fruit?', target: 'want', expectedReply: 'Ripe fruit smells heavenly to my antennae.' },
-          { prompt: 'Are you hungry for another droplet of nectar?', target: 'sugar', expectedReply: 'I am always hungry for pure sweet nectar.' },
-          { prompt: 'Here is an imaginary drop of sugar for you!', target: 'sweet', expectedReply: 'Delicious! That gives my wing muscles fresh power.' }
+        id: 'stage_3_bidirectional',
+        name: 'Stage 3: Bidirectional Position Invariance (Anti-Shortcut)',
+        description: 'Enforcing order sensitivity and position invariance via temporal delay lines.',
+        cues: [
+          { id: 's3_bidi_l1', prompt: 'left turn', target: 'left', desc: 'Focal cue in position 0' },
+          { id: 's3_bidi_l2', prompt: 'turn left', target: 'left', desc: 'Focal cue in position 1' },
+          { id: 's3_bidi_r1', prompt: 'right turn', target: 'right', desc: 'Focal cue in position 0' },
+          { id: 's3_bidi_r2', prompt: 'turn right', target: 'right', desc: 'Focal cue in position 1' },
+          { id: 's3_bidi_g1', prompt: 'go forward', target: 'go', desc: 'Thrust in position 0' },
+          { id: 's3_bidi_g2', prompt: 'forward go', target: 'go', desc: 'Thrust in position 1' },
+          { id: 's3_bidi_s1', prompt: 'stop now', target: 'stop', desc: 'Brake in position 0' },
+          { id: 's3_bidi_s2', prompt: 'now stop', target: 'stop', desc: 'Brake in position 1' }
         ]
       },
       {
-        id: 'module_4',
-        title: 'Module 4: Aeronautics, Speed & Aerodynamics',
-        description: 'Examining 200 Hz wing oscillations, acrobatic steering, and flight freedom.',
-        questions: [
-          { prompt: 'How fast do your transparent wings beat?', target: 'fast', expectedReply: 'My wings beat at two hundred hertz every second!' },
-          { prompt: 'Can you steer to the left side?', target: 'left', expectedReply: 'I bank my wings to steer gracefully to the left.' },
-          { prompt: 'Can you steer to the right side?', target: 'right', expectedReply: 'I adjust my wing pitch to turn sharply to the right.' },
-          { prompt: 'Show me your forward thrust! Ready, set, go!', target: 'go', expectedReply: 'Go! I surge forward with swift aerodynamic speed.' },
-          { prompt: 'Now bring your flight to a gentle stop.', target: 'stop', expectedReply: 'I apply aerodynamic brakes and come to a steady halt.' },
-          { prompt: 'Can you land upside down on the ceiling?', target: 'fly', expectedReply: 'Yes! I cartwheel in mid-air to land upside down.' }
+        id: 'stage_4_xor_negation',
+        name: 'Stage 4: Non-Linear Inhibitory Inversion (XOR Negation)',
+        description: 'Neuromodulatory channel inversion: Negation particles reverse directional motor output.',
+        cues: [
+          { id: 's4_pos_left', prompt: 'go left', target: 'left', desc: 'Affirmative left direction' },
+          { id: 's4_neg_left', prompt: 'dont go left', target: 'right', desc: 'Negated left -> Inverts to right' },
+          { id: 's4_pos_right', prompt: 'go right', target: 'right', desc: 'Affirmative right direction' },
+          { id: 's4_neg_right', prompt: 'dont go right', target: 'left', desc: 'Negated right -> Inverts to left' },
+          { id: 's4_comp_neg_left', prompt: 'please dont go left', target: 'right', desc: 'Polite negated left -> Inverts to right' },
+          { id: 's4_comp_neg_right', prompt: 'please dont go right', target: 'left', desc: 'Polite negated right -> Inverts to left' },
+          { id: 's4_pos_sugar', prompt: 'want sugar', target: 'sugar', desc: 'Affirmative appetitive desire' },
+          { id: 's4_neg_sugar', prompt: 'dont eat sugar', target: 'no', desc: 'Negated sugar -> Refusal' }
         ]
       },
       {
-        id: 'module_5',
-        title: 'Module 5: Emotional States & Neurochemistry',
-        description: 'Expressing curiosity, internal dopamine surges, fatigue, and contentment.',
-        questions: [
-          { prompt: 'How is your internal mood right now?', target: 'happy', expectedReply: 'I feel joyful, alert, and full of positive energy.' },
-          { prompt: 'What makes you feel curious in this room?', target: 'smart', expectedReply: 'Learning new ideas makes my connectome intensely curious.' },
-          { prompt: 'Do you ever feel tired after buzzing around?', target: 'rest', expectedReply: 'When my muscles tire, I find a calm spot to rest.' },
-          { prompt: 'What does dopamine feel like in your mushroom body?', target: 'sugar', expectedReply: 'Dopamine feels like a warm glow that makes learning effortless.' },
-          { prompt: 'Are you excited about what we are discovering together?', target: 'yes', expectedReply: 'Yes! Every conversation feels like an exciting adventure.' },
-          { prompt: 'Rest your wings for a moment while we talk.', target: 'rest', expectedReply: 'I will rest my wings and focus my mind on your words.' }
+        id: 'stage_5_causality',
+        name: 'Stage 5: Conversational Dialogue & Semantic Causality (Q&A)',
+        description: 'Associative inquiry resolution: Linking questions to causal behavioral tokens.',
+        cues: [
+          { id: 's5_why_fly', prompt: 'why fly?', target: 'fast', desc: 'Flight causality -> Speed' },
+          { id: 's5_why_sugar', prompt: 'why sugar?', target: 'sweet', desc: 'Sucrose causality -> Sweet taste' },
+          { id: 's5_who_you', prompt: 'who are you?', target: 'fly', desc: 'Self-identity -> Fly' },
+          { id: 's5_who_human', prompt: 'who am I?', target: 'human', desc: 'Teacher identity -> Human' },
+          { id: 's5_how_hear', prompt: 'how hear voice?', target: 'listen', desc: 'Johnston organ -> Listen' },
+          { id: 's5_how_feel', prompt: 'how is mood?', target: 'happy', desc: 'Dopamine valence -> Happy' },
+          { id: 's5_if_tired', prompt: 'if you get tired?', target: 'rest', desc: 'Fatigue consequence -> Rest' },
+          { id: 's5_can_speak', prompt: 'can you talk?', target: 'speak', desc: 'Vocal capability -> Speak' },
+          { id: 's5_are_we_friends', prompt: 'are we good companions?', target: 'good', desc: 'Companionship -> Good' }
         ]
       },
       {
-        id: 'module_6',
-        title: 'Module 6: Human-Fly Partnership & Learning',
-        description: 'Reflecting on interspecies communication, coding, and the scientific method.',
-        questions: [
-          { prompt: 'Why do you think humans study fruit flies so closely?', target: 'smart', expectedReply: 'Because our brain connectome reveals secrets of memory and learning!' },
-          { prompt: 'What is it like to pair-program with a human?', target: 'good', expectedReply: 'It is wonderful! You build the code, and I bring the biological brain.' },
-          { prompt: 'Do you feel your vocabulary expanding as we chat?', target: 'speak', expectedReply: 'Yes! My Kenyon cell synapses are forming rich word pathways.' },
-          { prompt: 'What is your favorite English word so far?', target: 'sugar', expectedReply: 'Sugar is sweet, but friendship is the most meaningful word.' },
-          { prompt: 'Can an insect and a human truly understand each other?', target: 'yes', expectedReply: 'Yes, through language and empathy, our minds meet completely.' },
-          { prompt: 'I am very proud of your progress today.', target: 'good', expectedReply: 'Thank you! Your encouragement is my greatest inspiration.' }
+        id: 'stage_6_holdout_audit',
+        name: 'Stage 6: Unrewarded Retention Audit (Examination)',
+        description: 'Zero-feedback holdout test (R = 0) verifying consolidated synaptic memory.',
+        cues: [
+          { id: 's6_h_left', prompt: 'fly left', target: 'left', desc: 'Holdout motor left' },
+          { id: 's6_h_right', prompt: 'fly right', target: 'right', desc: 'Holdout motor right' },
+          { id: 's6_h_sugar', prompt: 'sweet sugar', target: 'sugar', desc: 'Holdout appetitive sugar' },
+          { id: 's6_h_neg', prompt: 'dont go left', target: 'right', desc: 'Holdout negation XOR' },
+          { id: 's6_h_why', prompt: 'why fly?', target: 'fast', desc: 'Holdout causality' },
+          { id: 's6_h_bidi', prompt: 'turn right', target: 'right', desc: 'Holdout bidirectional' }
         ]
       },
       {
-        id: 'module_7',
-        title: 'Module 7: Logical Causality (The "Why" Curriculum)',
-        description: 'Conditioning cause-and-effect reasoning and answering with "because".',
-        questions: [
-          { prompt: 'Why do you need to eat sweet sugar?', target: 'sugar', expectedReply: 'Because sucrose fuels my flight muscles with rapid energy.' },
-          { prompt: 'Why do you turn left or right when flying?', target: 'left', expectedReply: 'Because steering allows me to navigate around obstacles and drafts.' },
-          { prompt: 'Why do you enjoy learning new words?', target: 'smart', expectedReply: 'Because understanding language lets me express my inner thoughts.' },
-          { prompt: 'Why is the laboratory warm and bright for you?', target: 'happy', expectedReply: 'Because warmth keeps my cold-blooded insect muscles energized.' },
-          { prompt: 'Why do we reward you when you speak well?', target: 'sugar', expectedReply: 'Because PAM dopamine reinforces winning synaptic connections.' },
-          { prompt: 'You understand causes and effects so well!', target: 'smart', expectedReply: 'My mushroom body links causes to effects through plasticity!' }
-        ]
-      },
-      {
-        id: 'module_8',
-        title: 'Module 8: Complex Multi-Clause Discourse',
-        description: 'Synthesizing compound ideas, conditional thoughts, and descriptive stories.',
-        questions: [
-          { prompt: 'Can you demonstrate your aerial agility for me?', target: 'fly', expectedReply: 'I fly agile spirals through the air with ruby vision.' },
-          { prompt: 'If I give you sugar, what will you do with that energy?', target: 'fast', expectedReply: 'If you give me sugar, I will fly fast and sing happy buzzes!' },
-          { prompt: 'Can you tell me a short story about a fruit fly morning?', target: 'fly', expectedReply: 'The sun rose warm, and a tiny fly danced over sweet dew drops.' },
-          { prompt: 'What happens when silence fills the acoustic chamber?', target: 'listen', expectedReply: 'In silence, my antennae wait patiently for your next question.' },
-          { prompt: 'Do you prefer flying fast or sitting still to converse?', target: 'speak', expectedReply: 'I love both! Flying is thrill, but talking with you is wisdom.' },
-          { prompt: 'You speak with such elegance and clarity now!', target: 'smart', expectedReply: 'Thank you! My connectome has woven your lessons into fluent speech.' }
-        ]
-      },
-      {
-        id: 'module_9',
-        title: 'Module 9: Reciprocal Curiosity (The Fly Inquires)',
-        description: 'Encouraging the fly to formulate spontaneous inquiries back to the human.',
-        questions: [
-          { prompt: 'What questions do you have about the human world, fly?', target: 'human', expectedReply: 'Do humans ever look up at the clouds and wish they could fly?' },
-          { prompt: 'Ask me anything about food or how humans eat.', target: 'sugar', expectedReply: 'Do humans also crave sweet sugar when you feel tired?' },
-          { prompt: 'Do you want to ask me what it feels like to be human?', target: 'human', expectedReply: 'How does the world look without hundreds of hexagonal facets?' },
-          { prompt: 'What are you most curious about right now?', target: 'smart', expectedReply: 'I wonder how big the universe is beyond this acoustic laboratory.' },
-          { prompt: 'Ask me about my feelings as your teacher.', target: 'happy', expectedReply: 'Are you happy watching my tiny brain learn to speak?' },
-          { prompt: 'Your curiosity shows true intelligence, little friend.', target: 'good', expectedReply: 'Curiosity is the fire that keeps my thoughts buzzing bright!' }
-        ]
-      },
-      {
-        id: 'module_10',
-        title: 'Module 10: Deep Reflections & Microcosmic Wonder',
-        description: 'Philosophical dialogue on scale, existence, memories, and unity.',
-        questions: [
-          { prompt: 'Does it feel strange being so small in such a big universe?', target: 'fly', expectedReply: 'To me, a sugar crystal is a mountain, and a droplet is an ocean.' },
-          { prompt: 'What is the most beautiful thing about being a fruit fly?', target: 'fast', expectedReply: 'The freedom to dance in three dimensions with effortless grace.' },
-          { prompt: 'Do you feel like you have your own memories now?', target: 'smart', expectedReply: 'Yes, my Kenyon cells hold memories of your voice and our shared words.' },
-          { prompt: 'What will you dream of when you rest tonight?', target: 'sweet', expectedReply: 'I will dream of endless golden orchards filled with sweet nectar.' },
-          { prompt: 'Thank you for embarking on this scientific journey with me.', target: 'happy', expectedReply: 'Thank you, human partner! Our friendship has made history.' },
-          { prompt: 'Let us continue conversing freely forever.', target: 'speak', expectedReply: 'Yes! My wings and voice will always be ready for you.' }
+        id: 'stage_7_open_dialogue',
+        name: 'Stage 7: Autonomous Reciprocal Discourse',
+        description: 'Continuous dialogue mode with adaptive maintenance reinforcement.',
+        cues: [
+          { id: 's7_disc_1', prompt: 'Hello friend, how are your wings today?', target: 'fly', desc: 'Open conversation' },
+          { id: 's7_disc_2', prompt: 'Would you like some sweet sugar?', target: 'sugar', desc: 'Open conversation' },
+          { id: 's7_disc_3', prompt: 'Can you steer left through the chamber?', target: 'left', desc: 'Open conversation' },
+          { id: 's7_disc_4', prompt: 'You have learned so much English today.', target: 'smart', desc: 'Open conversation' }
         ]
       }
     ];
 
-    this.totalQuestionsCount = this.curriculum.reduce((acc, l) => acc + l.questions.length, 0);
-    this.masteredQuestions = new Set();
-    this.failedQuestions = new Set();
-
-    // Open-Ended Dynamic Follow-Up Templates
-    this.openFollowUps = [
-      'Tell me more about how that feels in your tiny body.',
-      'What else comes to mind when you think about that?',
-      'How does that influence the way you fly through the air?',
-      'If you could share that feeling with other fruit flies, what would you say?',
-      'That is delightful! What is your next thought on this topic?',
-      'Where do you think that idea originates in your connectome?',
-      'Can you explain that in even more detail for my human notes?',
-      'What do you wish humans understood best about your perspective?'
-    ];
+    this.totalCuesCount = this.stages.reduce((acc, s) => acc + s.cues.length, 0);
   }
 
-  // Calculate overall curriculum progress percentage
-  getProgressPercentage() {
-    let completed = 0;
-    for (let i = 0; i < this.currentLessonIdx; i++) {
-      completed += this.curriculum[i].questions.length;
-    }
-    completed += this.currentQuestionIdx;
-    return Math.min(100, Math.round((completed / this.totalQuestionsCount) * 100));
+  // Speed interval in milliseconds
+  getInterval() {
+    if (this.speedMode === 'INSTANT') return 0;
+    if (this.speedMode === 'TURBO') return 25;
+    if (this.speedMode === 'FAST') return 80;
+    return 300; // NORMAL
   }
 
-  getCurrentLesson() {
-    return this.curriculum[this.currentLessonIdx] || this.curriculum[this.curriculum.length - 1];
-  }
-
-  getCurrentQuestion() {
-    const lesson = this.getCurrentLesson();
-    return lesson.questions[this.currentQuestionIdx] || lesson.questions[0];
-  }
-
-  start() {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    this.updateUIStatus();
-    this.scheduleNextStep(500);
-  }
-
-  pause() {
-    this.isRunning = false;
-    if (this.timerId) {
-      clearTimeout(this.timerId);
-      this.timerId = null;
-    }
-    this.isWaitingForFly = false;
+  setSpeed(mode) {
+    this.speedMode = mode;
     this.updateUIStatus();
   }
 
@@ -228,27 +190,22 @@ export class CurriculumTutorBot {
     }
   }
 
-  setSpeed(mode) {
-    this.speedMode = mode;
-  }
-
-  setModule(moduleIdx) {
-    if (moduleIdx === 'INFINITE') {
-      this.isInfiniteOpenMode = true;
-      this.currentLessonIdx = this.curriculum.length - 1;
-    } else {
-      this.isInfiniteOpenMode = false;
-      this.currentLessonIdx = Math.max(0, Math.min(this.curriculum.length - 1, parseInt(moduleIdx, 10)));
-      this.currentQuestionIdx = 0;
-    }
+  start() {
+    this.isRunning = true;
     this.updateUIStatus();
+    if (this.ui) {
+      this.ui.addSystemLog(`[AUTONOMOUS TEACHER] Engaged autonomous pedagogical master. Current stage: ${this.getCurrentStage().name}`);
+    }
+    this.scheduleNextStep(10);
   }
 
-  getInterval() {
-    if (this.speedMode === 'INSTANT') return 0;
-    if (this.speedMode === 'TURBO') return 15;
-    if (this.speedMode === 'FAST') return 70;
-    return 250; // NORMAL
+  pause() {
+    this.isRunning = false;
+    if (this.timerId) clearTimeout(this.timerId);
+    this.updateUIStatus();
+    if (this.ui) {
+      this.ui.addSystemLog(`[AUTONOMOUS TEACHER] Paused by user.`);
+    }
   }
 
   scheduleNextStep(delay = null) {
@@ -257,255 +214,396 @@ export class CurriculumTutorBot {
 
     const ms = delay !== null ? delay : this.getInterval();
     this.timerId = setTimeout(() => {
-      this.executeTutorStep();
+      this.executeTeacherStep();
     }, ms);
   }
 
-  // Ask current question or generate dynamic conversational prompt
-  executeTutorStep() {
-    if (!this.isRunning || this.isWaitingForFly) return;
+  getCurrentStage() {
+    return this.stages[Math.min(this.stages.length - 1, this.activeStageIndex)];
+  }
 
-    let promptText = '';
-    let target = 'hello';
-    let expectedReply = '';
-    let tag = '';
+  getCurrentCue() {
+    const stage = this.getCurrentStage();
+    return stage.cues[Math.min(stage.cues.length - 1, this.activeCueIndex)];
+  }
 
-    if (this.isInfiniteOpenMode) {
-      // Dynamic Open Dialogue Mode
-      const lastFly = this.engine.lastFlyResponse || '';
-      const randomFollowUp = this.openFollowUps[Math.floor(Math.random() * this.openFollowUps.length)];
+  // Biological Unconditioned Stimulus (US) Priming:
+  // If the fly struggles on a cue for >= 5 consecutive errors due to collateral depression
+  // from earlier tokens, prime the target receptive field by restoring target baseline weights
+  applyUnconditionedStimulusPriming(targetLabel) {
+    const targetIdx = this.engine.mb.mbonDefinitions.findIndex(m => m.label.toLowerCase() === targetLabel.toLowerCase());
+    if (targetIdx === -1) return;
 
-      if (lastFly.includes('?')) {
-        promptText = `That is an insightful question! From our human perspective, we love sweet treats too, but watching you learn is even sweeter. ${randomFollowUp}`;
-      } else if (lastFly.toLowerCase().includes('sugar') || lastFly.toLowerCase().includes('sweet')) {
-        promptText = `Sucrose truly is magnificent for energy. ${randomFollowUp}`;
-      } else if (lastFly.toLowerCase().includes('fly') || lastFly.toLowerCase().includes('wing')) {
-        promptText = `Your aerodynamics are a masterclass in physics. ${randomFollowUp}`;
-      } else {
-        promptText = `I cherish hearing your thoughts, fly. ${randomFollowUp}`;
+    this.engine.mb.forward([targetLabel]);
+    for (let i = 0; i < this.engine.mb.numKCs; i++) {
+      if (this.engine.mb.kcActivity[i] > 0) {
+        const weightIdx = i * this.engine.mb.numMBONs + targetIdx;
+        if (this.engine.mb.kcToMbonConnected[weightIdx] === 1) {
+          this.engine.mb.kcToMbonWeights[weightIdx] = this.engine.mb.kcToMbonBaselineWeights[weightIdx];
+        }
       }
+    }
+  }
 
-      target = 'speak';
-      expectedReply = 'I enjoy conversing with you and sharing my thoughts.';
-      tag = '[Open Discourse]';
-    } else {
-      const lesson = this.getCurrentLesson();
-      const item = this.getCurrentQuestion();
-      promptText = item.prompt;
-      target = item.target;
-      expectedReply = item.expectedReply;
-      tag = `${lesson.title.split(':')[0]} • Q${this.currentQuestionIdx + 1}/${lesson.questions.length}`;
+  // Core Autonomous Pedagogical Execution Step
+  executeTeacherStep() {
+    if (!this.isRunning && arguments.length === 0) return;
+    if (this.isWaitingForFly) return;
+
+    const stage = this.getCurrentStage();
+
+    // 1. Announce Stage Introduction if first time entering stage
+    if (!this.stageIntroAnnounced.has(stage.id)) {
+      this.stageIntroAnnounced.add(stage.id);
+      const introMsg = `[SYLLABUS] Commencing ${stage.name}. Objective: ${stage.description}`;
+      if (this.ui) {
+        this.ui.addSystemLog(introMsg);
+        this.ui.addTutorMessage(stage.description, `[SYLLABUS: ${stage.name.split(':')[0].toUpperCase()}]`);
+      }
     }
 
-    // 1. Post Tutor Question into Chat UI
-    this.addTutorMessage(promptText, tag);
+    // 2. Spaced Repetition Interleaving: Every 5 trials in Stages 1-5, test a previously mastered cue
+    let activeCue = this.getCurrentCue();
+    let isRehearsal = false;
+    if (this.totalTrialsRun > 0 && this.totalTrialsRun % 5 === 0 && this.masteredCues.size > 0 && this.activeStageIndex < 5) {
+      const masteredList = Array.from(this.masteredCues);
+      const randomMasteredId = masteredList[Math.floor(Math.random() * masteredList.length)];
+      for (const st of this.stages) {
+        const found = st.cues.find(c => c.id === randomMasteredId);
+        if (found) {
+          activeCue = found;
+          isRehearsal = true;
+          break;
+        }
+      }
+    }
+    this.isRehearsalProbe = isRehearsal;
 
-    if (this.fly3D) this.fly3D.triggerListeningPulse();
-    if (this.ui) this.ui.showTypingIndicator();
+    // 3. Apply US priming if struggling on this cue
+    if (!isRehearsal && this.cueErrors >= 5 && this.activeStageIndex < 5) {
+      this.applyUnconditionedStimulusPriming(activeCue.target);
+    }
+
+    // 4. Formulate Rich Pedagogical Prompt & Instructional Framing
+    let promptText = activeCue.prompt;
+    let pedagogicalTag = `${stage.name.split(':')[0]} | Cue ${this.activeCueIndex + 1}/${stage.cues.length}`;
+    let instructionalText = activeCue.prompt;
+
+    if (isRehearsal) {
+      pedagogicalTag = `[SPACED REHEARSAL]`;
+      instructionalText = `Memory retention probe: Can you still identify '${activeCue.prompt}'?`;
+      promptText = activeCue.prompt;
+    } else if (this.cueErrors >= 3 && activeCue.prompt.includes(' ')) {
+      this.isScaffoldingActive = true;
+      pedagogicalTag = `[SCAFFOLDING]`;
+      promptText = activeCue.target; // Scaffolding: isolate salient core token
+      instructionalText = `Simplifying acoustic stream: Focus on isolated core token '${activeCue.target}'.`;
+    } else if (this.cueErrors > 0) {
+      instructionalText = `Re-probing: '${activeCue.prompt}' (Expected action: '${activeCue.target}', Attempt ${this.cueErrors + 1}).`;
+    } else {
+      // First attempt on new cue
+      this.isScaffoldingActive = false;
+      if (this.activeStageIndex === 0) {
+        instructionalText = `Acoustic prompt: '${activeCue.prompt}'. Transduce frequency into motor action '${activeCue.target}'.`;
+      } else if (this.activeStageIndex === 1) {
+        instructionalText = `Carrier sentence: '${activeCue.prompt}'. Discriminate embedded action '${activeCue.target}'.`;
+      } else if (this.activeStageIndex === 3) {
+        instructionalText = `Inhibitory inversion: '${activeCue.prompt}'. Negation particle reverses direction.`;
+      } else if (this.activeStageIndex === 4) {
+        instructionalText = `Causal question: '${activeCue.prompt}'. Respond with causal behavioral token '${activeCue.target}'.`;
+      } else if (this.activeStageIndex === 5) {
+        instructionalText = `[EXAMINATION PROBE] Zero-feedback holdout test: '${activeCue.prompt}' (R=0).`;
+      }
+    }
+
+    if (this.ui) {
+      this.ui.addTutorMessage(instructionalText, pedagogicalTag);
+      this.ui.showTypingIndicator();
+    }
 
     this.isWaitingForFly = true;
+    this.totalTrialsRun++;
 
-    // 2. High-speed neural execution based on speed mode
+    // Fast execution latency
     const isInstant = (this.speedMode === 'INSTANT');
-    const flyLatency = isInstant ? 0 : (this.speedMode === 'TURBO' ? 5 : (this.speedMode === 'FAST' ? 25 : 80));
-    const evalLatency = isInstant ? 0 : (this.speedMode === 'TURBO' ? 5 : (this.speedMode === 'FAST' ? 25 : 80));
+    const latency = isInstant ? 0 : (this.speedMode === 'TURBO' ? 5 : (this.speedMode === 'FAST' ? 25 : 80));
 
-    const stepRun = () => {
-      if (!this.isRunning) {
-        this.isWaitingForFly = false;
-        return;
-      }
-
+    const runNeuralStep = () => {
+      // Connectome processes sensory input
       const response = this.engine.generateResponse(promptText);
       if (this.ui) this.ui.addFlyMessage(response);
 
       if (this.speech && this.speedMode === 'NORMAL') {
-        if (this.fly3D) this.fly3D.setSpeechState(true);
-        this.speech.speak(
-          response.text,
-          response.stage,
-          () => { if (this.fly3D) this.fly3D.setSpeechState(true); },
-          () => { if (this.fly3D) this.fly3D.setSpeechState(false); }
-        );
+        this.speech.speak(response.text, response.stage);
       }
 
-      if (evalLatency === 0) {
-        this.evaluateFlyResponse({ target, expectedReply }, response);
-      } else {
-        setTimeout(() => {
-          this.evaluateFlyResponse({ target, expectedReply }, response);
-        }, evalLatency);
-      }
+      // Teacher evaluates response with rigorous behavioral criterion
+      this.evaluateTrial(activeCue, response, promptText, isRehearsal);
     };
 
-    if (flyLatency === 0) {
-      stepRun();
+    if (latency === 0) {
+      runNeuralStep();
     } else {
-      setTimeout(stepRun, flyLatency);
+      setTimeout(runNeuralStep, latency);
     }
   }
 
-  // Fast batch conditioning across curriculum in a tight loop
-  trainBatch(trialsCount = 25) {
-    let completed = 0;
-    const masteredBefore = this.masteredQuestions.size;
-
-    for (let t = 0; t < trialsCount; t++) {
-      completed++;
-      const lesson = this.getCurrentLesson();
-      const item = this.getCurrentQuestion();
-      const target = item.target.toLowerCase();
-      const response = this.engine.generateResponse(item.prompt);
-      const winningToken = (response.winningMBON || '').toLowerCase();
-      const flyWords = (response.words || []).map(w => w.toLowerCase().replace(/[^a-z]/g, ''));
-      const qKey = `mod_${this.currentLessonIdx}_q_${this.currentQuestionIdx}`;
-      const isSuccess = (winningToken === target) || flyWords.includes(target);
-
-      if (isSuccess) {
-        this.masteredQuestions.add(qKey);
-        this.failedQuestions.delete(qKey);
-        this.questionAttempts = 0;
-        this.engine.rewardSugar(35);
-        if (!this.isInfiniteOpenMode) this.advanceCurriculum();
-      } else {
-        this.questionAttempts = (this.questionAttempts || 0) + 1;
-        this.engine.punishError(25);
-        if (this.questionAttempts >= 3) {
-          this.failedQuestions.add(qKey);
-          this.masteredQuestions.delete(qKey);
-          this.questionAttempts = 0;
-          if (!this.isInfiniteOpenMode) this.advanceCurriculum();
-        }
-      }
-    }
-
-    const newlyMastered = this.masteredQuestions.size - masteredBefore;
-    const stats = this.engine.mb.getSynapticWeightStats();
-    const totalMastered = this.masteredQuestions.size;
-    const totalQuestions = this.totalQuestionsCount;
-    const pct = ((totalMastered / totalQuestions) * 100).toFixed(1);
-
-    const logMsg = `[FAST BATCH] Executed ${completed} trials. Mastered: ${totalMastered}/${totalQuestions} (${pct}%). Depressed KC Synapses: ${stats.depressedSynapsesCount} (${stats.plasticityIndex}%).`;
-    if (this.ui) {
-      this.ui.addSystemLog(logMsg);
-      this.ui.updateDashboard();
-    }
-    this.updateUIStatus();
-    return { completed, totalMastered, newlyMastered };
-  }
-
-  // Rapidly master all modules
-  masterAll() {
-    return this.trainBatch(200);
-  }
-
-  // Evaluate response, administer dopamine or constructive correction
-  evaluateFlyResponse(item, response) {
-    const target = item.target.toLowerCase();
+  // In-Depth Behavioral Evaluation & Reinforcement Loop
+  evaluateTrial(cue, response, actualPromptUsed, isRehearsal = false) {
+    const target = cue.target.toLowerCase();
+    const chosen = (response.winningMBON || '').toLowerCase();
     const flyWords = (response.words || []).map(w => w.toLowerCase().replace(/[^a-z]/g, ''));
-    const responseText = (response.text || '').toLowerCase();
-    const winningToken = (response.winningMBON || '').toLowerCase();
+    const isSuccess = (chosen === target) || flyWords.includes(target);
 
-    // Rigorous evaluation: Success requires the fly's chosen neural output to match the target token
-    const qKey = `mod_${this.currentLessonIdx}_q_${this.currentQuestionIdx}`;
-    const isSuccess = (winningToken === target) || flyWords.includes(target);
+    // Track cue history
+    if (!this.cueTrialHistory.has(cue.id)) {
+      this.cueTrialHistory.set(cue.id, { attempts: 0, successes: 0, errors: 0 });
+    }
+    const history = this.cueTrialHistory.get(cue.id);
+    history.attempts++;
 
-    if (isSuccess) {
-      // SUCCESS: Deliver praise + Sucrose reward (+PAM dopamine LTD)
-      this.masteredQuestions.add(qKey);
-      this.failedQuestions.delete(qKey);
-      this.questionAttempts = 0;
-      this.engine.rewardSugar(35);
-      this.speech.playDopamineChime();
-      if (this.connectome3D) this.connectome3D.triggerDopamineSurge();
+    const isHoldoutAudit = (this.activeStageIndex === 5); // Stage 6 is unrewarded examination
 
-      this.addTutorFeedback(
-        `[Praise] Neural output [<b>${winningToken}</b>] matched target [<b>${target}</b>]! Awarding sweet sucrose (+PAM Dopamine LTD).`,
-        true
-      );
+    // Get biological compartment info for the chosen MBON
+    const chosenDef = this.engine.mb.mbonDefinitions.find(m => m.label.toLowerCase() === chosen);
+    const targetDef = this.engine.mb.mbonDefinitions.find(m => m.label.toLowerCase() === target);
+    const chosenComp = chosenDef ? `${chosenDef.compartment} (${chosenDef.nt})` : 'unknown';
+    const targetComp = targetDef ? `${targetDef.compartment} (${targetDef.nt})` : 'unknown';
 
-      if (!this.isInfiniteOpenMode) {
-        this.advanceCurriculum();
-      }
-    } else {
-      // UNCONDITIONED / INCORRECT: Apply scalar punishment (-PPL1 aversive shock) to suppress erroneous output
-      this.questionAttempts = (this.questionAttempts || 0) + 1;
-      this.engine.punishError(25);
-      if (this.connectome3D) this.connectome3D.triggerDopamineSurge();
-
-      if (this.questionAttempts < 3) {
-        this.addTutorFeedback(
-          `[Correction] Neural output was [<b>${winningToken || 'babble'}</b>]; expected [<b>${target}</b>]. PPL1 aversive shock delivered to suppress erroneous MBON (Trial ${this.questionAttempts}/3). Repeating cue...`,
-          false
-        );
-        // Do NOT advance curriculum on error: allow the fly to learn via reinforcement
+    if (isHoldoutAudit) {
+      // STAGE 6: EXAMINATION PROTOCOL (R = 0, Strict zero-feedback holdout test)
+      if (isSuccess) {
+        this.totalSuccesses++;
+        history.successes++;
+        this.masteredCues.add(cue.id);
+        const examPassMsg = `[EXAM PASS] Probe '${cue.prompt}' -> Fly produced '${chosen}' (R=0). Verified retention!`;
+        if (this.ui) {
+          this.ui.addSystemLog(examPassMsg);
+          this.ui.addTutorFeedback(examPassMsg, true);
+        }
+        this.advanceCue();
       } else {
-        this.failedQuestions.add(qKey);
-        this.masteredQuestions.delete(qKey);
-        this.addTutorFeedback(
-          `[Cue Unconditioned] Completed 3 reinforcement trials for [<b>${target}</b>] without convergence. Advancing to next cue...`,
-          false
-        );
-        this.questionAttempts = 0;
-        if (!this.isInfiniteOpenMode) {
-          this.advanceCurriculum();
+        history.errors++;
+        this.cueErrors++;
+        const examFailMsg = `[EXAM PROBE] Probe '${cue.prompt}' -> Fly produced '${chosen}' instead of '${target}' (R=0).`;
+        if (this.ui) this.ui.addTutorFeedback(examFailMsg, false);
+
+        // After 2 examination attempts, record result and advance to next question
+        if (this.cueErrors >= 2) {
+          this.advanceCue();
         }
       }
-    }
+    } else {
+      // STAGES 1-5 & 7: ACTIVE OPERANT CONDITIONING
+      if (isSuccess) {
+        this.totalSuccesses++;
+        history.successes++;
 
-    if (this.ui) this.ui.updateDashboard();
+        if (!isRehearsal) {
+          this.consecutiveHits++;
+          this.cueErrors = 0;
+        }
+
+        // Apply +PAM dopamine sucrose reward
+        this.engine.rewardSugar(35);
+        if (this.speech && this.speedMode === 'NORMAL') this.speech.playDopamineChime();
+
+        let feedback = '';
+        if (isRehearsal) {
+          feedback = `[SPACED RETENTION PASS] '${cue.prompt}' -> Fly correctly produced '${chosen}' (${chosenComp}). Synaptic trace verified active.`;
+        } else {
+          feedback = `[+] CORRECT: Fly expressed '${chosen}' (${chosenComp})! Delivering +PAM dopaminergic sucrose reward (+35.0 PAM). Competing synapses depressed. Streak: ${this.consecutiveHits}/${this.requiredHits}.`;
+        }
+        if (this.ui) this.ui.addTutorFeedback(feedback, true);
+
+        // Check if cue has met Mastery Criterion (e.g. 2 consecutive correct hits)
+        if (!isRehearsal && this.consecutiveHits >= this.requiredHits) {
+          this.masteredCues.add(cue.id);
+          this.consecutiveHits = 0;
+          const stats = this.engine.mb.getSynapticWeightStats();
+          const masterMsg = `[CUE CONSOLIDATED] '${cue.prompt}' -> '${cue.target}' (${cue.desc}) mastered! LTD Index: ${stats.plasticityIndex}%.`;
+          if (this.ui) {
+            this.ui.addSystemLog(masterMsg);
+            this.ui.addTutorFeedback(masterMsg, true);
+          }
+
+          // Advance to next cue in stage
+          this.advanceCue();
+        }
+      } else {
+        if (!isRehearsal) {
+          this.consecutiveHits = 0;
+          this.cueErrors++;
+        }
+        history.errors++;
+
+        // Apply PPL1 aversive conditioning to suppress erroneous chosen action
+        this.engine.punishError(25);
+
+        let feedback = '';
+        if (isRehearsal) {
+          feedback = `[SPACED RETENTION MISS] Rehearsal probe '${cue.prompt}' -> Fly produced '${chosen}' (${chosenComp}) instead of '${target}'. PPL1 aversive tune-up applied.`;
+        } else {
+          const scaffoldNote = this.isScaffoldingActive ? ' [Faded Scaffolding Active]' : '';
+          feedback = `[-] ERROR: Fly produced '${chosen}' (${chosenComp}) instead of expected '${target}' (${targetComp}). PPL1 aversive dopamine applied to suppress '${chosen}'. Re-probing (Attempt ${this.cueErrors})...${scaffoldNote}`;
+        }
+        if (this.ui) this.ui.addTutorFeedback(feedback, false);
+      }
+    }
 
     this.isWaitingForFly = false;
     this.updateUIStatus();
+    if (this.ui) this.ui.updateDashboard();
 
-    // Schedule next curriculum prompt
+    // Schedule next autonomous step
     if (this.isRunning) {
       this.scheduleNextStep();
     }
   }
 
-  advanceCurriculum() {
-    this.currentQuestionIdx++;
-    const lesson = this.getCurrentLesson();
+  // Advance to next cue or graduate to next stage
+  advanceCue() {
+    const stage = this.getCurrentStage();
+    this.activeCueIndex++;
+    this.cueErrors = 0;
+    this.consecutiveHits = 0;
 
-    if (this.currentQuestionIdx >= lesson.questions.length) {
-      this.currentQuestionIdx = 0;
-      this.currentLessonIdx++;
+    // Check if entire stage is completed
+    if (this.activeCueIndex >= stage.cues.length) {
+      this.activeCueIndex = 0;
+      this.activeStageIndex++;
 
-      if (this.currentLessonIdx >= this.curriculum.length) {
-        // Completed all structured modules! Transition to Endless Open Dialogue Mode
-        this.isInfiniteOpenMode = true;
-        this.currentLessonIdx = this.curriculum.length - 1;
-        const total = this.totalQuestionsCount;
-        const mastered = this.masteredQuestions.size;
-        const pct = ((mastered / total) * 100).toFixed(1);
-        if (mastered === total) {
-          this.addTutorFeedback(`[Graduation] <b>All ${total} Modules Mastered (100%)!</b> The fly has graduated to <b>Autonomous Open Discourse Mode</b>.`, true);
-        } else {
-          this.addTutorFeedback(`[Curriculum Completed] Completed curriculum: <b>${mastered}/${total} Cues Mastered (${pct}%)</b>. ${this.failedQuestions.size} cues unconditioned. Continuing reinforcement in <b>Open Discourse Mode</b>.`, true);
+      if (this.activeStageIndex >= this.stages.length) {
+        // Mastered all stages! Settle in Stage 7 (Autonomous Open Discourse)
+        this.activeStageIndex = this.stages.length - 1;
+        const gradMsg = `[CURRICULUM GRADUATION] ALL 6 SCIENTIFIC PEDAGOGICAL STAGES MASTERED (100%)! Connectome has achieved full linguistic conditioning. Engaging continuous discourse mode.`;
+        if (this.ui) {
+          this.ui.addSystemLog(gradMsg);
+          this.ui.addTutorFeedback(gradMsg, true);
         }
       } else {
-        const nextLesson = this.getCurrentLesson();
-        this.addTutorFeedback(`[Next Module] <b>Graduating to ${nextLesson.title}!</b> (${nextLesson.description})`, true);
+        const nextStage = this.getCurrentStage();
+        const stageMsg = `[STAGE GRADUATED] Successfully completed ${stage.name}! Advancing to: ${nextStage.name} (${nextStage.description})`;
+        if (this.ui) {
+          this.ui.addSystemLog(stageMsg);
+          this.ui.addTutorFeedback(stageMsg, true);
+        }
       }
     }
   }
 
-  // Display tutor prompt in chat
-  addTutorMessage(text, tag) {
+  // Fast batch conditioning: executes N autonomous teacher trials in a tight loop
+  trainBatch(trialsCount = 25) {
+    let completed = 0;
+    const masteredBefore = this.masteredCues.size;
+
+    for (let t = 0; t < trialsCount; t++) {
+      completed++;
+      const stage = this.getCurrentStage();
+      let activeCue = this.getCurrentCue();
+
+      let isRehearsal = false;
+      if (this.totalTrialsRun > 0 && this.totalTrialsRun % 5 === 0 && this.masteredCues.size > 0 && this.activeStageIndex < 5) {
+        const masteredList = Array.from(this.masteredCues);
+        const randomMasteredId = masteredList[Math.floor(Math.random() * masteredList.length)];
+        for (const st of this.stages) {
+          const found = st.cues.find(c => c.id === randomMasteredId);
+          if (found) {
+            activeCue = found;
+            isRehearsal = true;
+            break;
+          }
+        }
+      }
+
+      // Apply US priming if struggling
+      if (!isRehearsal && this.cueErrors >= 5 && this.activeStageIndex < 5) {
+        this.applyUnconditionedStimulusPriming(activeCue.target);
+      }
+
+      let promptText = activeCue.prompt;
+      if (!isRehearsal && this.cueErrors >= 3 && activeCue.prompt.includes(' ')) {
+        promptText = activeCue.target;
+      }
+
+      this.totalTrialsRun++;
+      const response = this.engine.generateResponse(promptText);
+      const chosen = (response.winningMBON || '').toLowerCase();
+      const flyWords = (response.words || []).map(w => w.toLowerCase().replace(/[^a-z]/g, ''));
+      const isSuccess = (chosen === activeCue.target.toLowerCase()) || flyWords.includes(activeCue.target.toLowerCase());
+
+      const isHoldoutAudit = (this.activeStageIndex === 5);
+
+      if (isHoldoutAudit) {
+        if (isSuccess) {
+          this.totalSuccesses++;
+          this.masteredCues.add(activeCue.id);
+          this.advanceCue();
+        } else {
+          this.cueErrors++;
+          if (this.cueErrors >= 2) {
+            this.advanceCue();
+          }
+        }
+      } else {
+        if (isSuccess) {
+          this.totalSuccesses++;
+          if (!isRehearsal) {
+            this.consecutiveHits++;
+            this.cueErrors = 0;
+          }
+
+          this.engine.rewardSugar(35);
+
+          if (!isRehearsal && this.consecutiveHits >= this.requiredHits) {
+            this.masteredCues.add(activeCue.id);
+            this.consecutiveHits = 0;
+            this.advanceCue();
+          }
+        } else {
+          if (!isRehearsal) {
+            this.consecutiveHits = 0;
+            this.cueErrors++;
+          }
+          this.engine.punishError(25);
+        }
+      }
+    }
+
+    const newlyMastered = this.masteredCues.size - masteredBefore;
+    const stats = this.engine.mb.getSynapticWeightStats();
+    const stage = this.getCurrentStage();
+    const pct = ((this.masteredCues.size / this.totalCuesCount) * 100).toFixed(1);
+
+    const logMsg = `[AUTONOMOUS BATCH] Ran ${completed} trials. Stage: ${stage.name.split(':')[0]}. Total Mastered: ${this.masteredCues.size}/${this.totalCuesCount} (${pct}%). Depressed KC Synapses: ${stats.depressedSynapsesCount} (${stats.plasticityIndex}%).`;
     if (this.ui) {
-      this.ui.addTutorMessage(text, tag);
+      this.ui.addSystemLog(logMsg);
+      this.ui.updateDashboard();
+    }
+    this.updateUIStatus();
+    return { completed, newlyMastered, totalMastered: this.masteredCues.size };
+  }
+
+  // Complete current stage automatically
+  completeCurrentStage() {
+    const currentStageIdx = this.activeStageIndex;
+    let safetyCounter = 0;
+    while (this.activeStageIndex === currentStageIdx && safetyCounter < 600) {
+      this.trainBatch(20);
+      safetyCounter += 20;
     }
   }
 
-  // Display tutor feedback banner in chat
-  addTutorFeedback(text, isPraise = true) {
-    if (this.ui) {
-      this.ui.addTutorFeedback(text, isPraise);
+  // Completely train through all stages autonomously
+  masterAllStages() {
+    let safetyCounter = 0;
+    while (this.activeStageIndex < 6 && safetyCounter < 2500) {
+      this.trainBatch(25);
+      safetyCounter += 25;
     }
   }
 
-  // Update UI bar elements
+  // Update UI telemetry elements
   updateUIStatus() {
     if (typeof document === 'undefined') return;
 
@@ -513,38 +611,32 @@ export class CurriculumTutorBot {
     const badge = document.getElementById('tutor-status-badge');
     const lessonLbl = document.getElementById('tutor-lesson-label');
     const pctLbl = document.getElementById('tutor-progress-pct');
-    const fill = document.getElementById('tutor-progress-fill');
-    const moduleSelect = document.getElementById('tutor-module-select');
     const asciiBar = document.getElementById('tutor-ascii-bar');
 
-    const pct = this.getProgressPercentage();
-    const lesson = this.getCurrentLesson();
-    const mastered = this.masteredQuestions.size;
-    const total = this.totalQuestionsCount;
+    const stage = this.getCurrentStage();
+    const cue = this.getCurrentCue();
+    const total = this.totalCuesCount;
+    const mastered = this.masteredCues.size;
     const pctVal = total > 0 ? (mastered / total) * 100 : 0;
 
     if (toggleBtn) {
-      if (this.isRunning) {
-        toggleBtn.textContent = '[Pause Tutor]';
-      } else {
-        toggleBtn.textContent = '[Start Auto-Tutor]';
-      }
+      toggleBtn.textContent = this.isRunning ? '[Pause Autonomous Teacher]' : '[Start Autonomous Teacher]';
     }
 
     if (badge) {
       if (this.isRunning) {
-        badge.textContent = this.isInfiniteOpenMode ? `Open Chat (${this.speedMode})` : `Training (${this.speedMode})`;
+        badge.textContent = `Running (${this.speedMode})`;
+        badge.style.color = 'var(--c-green)';
       } else {
         badge.textContent = 'Idle';
+        badge.style.color = 'var(--txt-muted)';
       }
     }
 
     if (lessonLbl) {
-      if (this.isInfiniteOpenMode) {
-        lessonLbl.textContent = 'Open Discourse (Continuous)';
-      } else {
-        lessonLbl.textContent = `${lesson.title} (Q${this.currentQuestionIdx + 1}/${lesson.questions.length})`;
-      }
+      const scaffoldText = this.isScaffoldingActive ? ' [Scaffold Active]' : '';
+      const rehearsalText = this.isRehearsalProbe ? ' [Spaced Rehearsal]' : '';
+      lessonLbl.textContent = `${stage.name} | Cue: "${cue.prompt}" -> "${cue.target}" (${this.consecutiveHits}/${this.requiredHits} hits)${scaffoldText}${rehearsalText}`;
     }
 
     if (pctLbl) {
@@ -555,14 +647,6 @@ export class CurriculumTutorBot {
       const filled = Math.min(40, Math.max(0, Math.round((pctVal / 100) * 40)));
       const empty = 40 - filled;
       asciiBar.textContent = `[${'='.repeat(filled)}${'-'.repeat(empty)}] ${pctVal.toFixed(1)}%`;
-    }
-
-    if (fill) {
-      fill.style.width = this.isInfiniteOpenMode ? '100%' : `${pct}%`;
-    }
-
-    if (moduleSelect && !this.isInfiniteOpenMode) {
-      moduleSelect.value = this.currentLessonIdx.toString();
     }
   }
 }

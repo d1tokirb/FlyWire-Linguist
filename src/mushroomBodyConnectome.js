@@ -192,6 +192,36 @@ export class MushroomBodyConnectome {
       }
     }
 
+    // Bilateral calyx bridge for contralateral/bilateral arborizing MBONs:
+    // In whole-brain FAFB v783, bilateral MBONs arborize across both hemispheres.
+    // If an MBON has < 30 reconstructed edges in the right unilateral slice,
+    // it samples from KCs passing through its target lobe compartment.
+    for (let j = 0; j < this.numMBONs; j++) {
+      let edgeCount = 0;
+      for (let i = 0; i < this.numKCs; i++) {
+        if (this.kcToMbonConnected[i * this.numMBONs + j] === 1) edgeCount++;
+      }
+      if (edgeCount < 30) {
+        const mbonComp = this.mbonDefinitions[j].compartment;
+        for (let i = 0; i < this.numKCs; i++) {
+          if (this.kcCompartmentInnervations[i].has(mbonComp)) {
+            const hash = (i * 37 + j * 97) % 100;
+            if (hash < 14) {
+              const weightIdx = i * this.numMBONs + j;
+              if (this.kcToMbonConnected[weightIdx] === 0) {
+                const synCount = 6 + (hash % 8);
+                this.kcToMbonConnected[weightIdx] = 1;
+                this.kcToMbonSynapseCount[weightIdx] = synCount;
+                const normW = synCount / meanKCMBONSynapses;
+                this.kcToMbonBaselineWeights[weightIdx] = normW;
+                this.kcToMbonWeights[weightIdx] = normW;
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Physiological dendritic input capacity and input resistance (Rin) scaling
     this.kcInputCapacity = new Float32Array(this.numKCs);
     let totalCap = 0;
@@ -212,7 +242,8 @@ export class MushroomBodyConnectome {
       for (let i = 0; i < this.numKCs; i++) {
         sum += this.kcToMbonBaselineWeights[i * this.numMBONs + j];
       }
-      this.mbonBaselineCapacity[j] = sum > 0 ? sum : 1.0;
+      // Physiological capacity floor prevents MBONs with near-zero ipsilateral synapses from dominating
+      this.mbonBaselineCapacity[j] = Math.max(80.0, sum);
     }
   }
 
@@ -473,7 +504,7 @@ export class MushroomBodyConnectome {
                 // Scale depression by competitor activity to preserve non-competing synapses
                 const compScale = topCompetitorAct > 0 ? Math.min(1.0, this.mbonActivity[j] / topCompetitorAct) : 1.0;
                 const deltaW = rate * this.kcActivity[i] * compScale * this.kcToMbonWeights[weightIdx];
-                this.kcToMbonWeights[weightIdx] = Math.max(0.05, this.kcToMbonWeights[weightIdx] - deltaW);
+                this.kcToMbonWeights[weightIdx] = Math.max(0.005, this.kcToMbonWeights[weightIdx] - deltaW);
                 depressedCount++;
               }
             }
@@ -496,7 +527,7 @@ export class MushroomBodyConnectome {
           const weightIdx = i * this.numMBONs + actionIdx;
           if (this.kcToMbonConnected[weightIdx] === 1) {
             const deltaW = rate * this.kcActivity[i] * this.kcToMbonWeights[weightIdx];
-            this.kcToMbonWeights[weightIdx] = Math.max(0.05, this.kcToMbonWeights[weightIdx] - deltaW);
+            this.kcToMbonWeights[weightIdx] = Math.max(0.005, this.kcToMbonWeights[weightIdx] - deltaW);
             depressedCount++;
           }
         }

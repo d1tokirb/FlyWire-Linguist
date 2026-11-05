@@ -21,6 +21,11 @@ export class App {
 
     this.initEvents();
     this.ui.updateDashboard();
+
+    // Autostart autonomous pedagogical teacher on page load
+    setTimeout(() => {
+      this.tutor.start();
+    }, 500);
   }
 
   initEvents() {
@@ -101,8 +106,13 @@ export class App {
         if (confirm('Reset connectome to Tabula Rasa (0 words)?')) {
           if (this.tutor) {
             this.tutor.pause();
-            this.tutor.currentLessonIdx = 0;
-            this.tutor.currentQuestionIdx = 0;
+            this.tutor.activeStageIndex = 0;
+            this.tutor.activeCueIndex = 0;
+            this.tutor.consecutiveHits = 0;
+            this.tutor.cueErrors = 0;
+            this.tutor.masteredCues.clear();
+            this.tutor.cueTrialHistory.clear();
+            this.tutor.stageIntroAnnounced.clear();
             this.tutor.updateUIStatus();
           }
           this.engine.resetToTabulaRasa();
@@ -126,39 +136,39 @@ export class App {
       });
     }
 
-    const tutorModuleSelect = document.getElementById('tutor-module-select');
-    if (tutorModuleSelect) {
-      tutorModuleSelect.addEventListener('change', (e) => {
-        this.tutor.setModule(e.target.value);
-      });
-    }
-
     const btnStepTutor = document.getElementById('btn-step-tutor');
     if (btnStepTutor) {
       btnStepTutor.addEventListener('click', () => {
-        this.tutor.executeTutorStep();
+        this.tutor.executeTeacherStep();
       });
     }
 
-    // High-speed batch training buttons
-    const btnTrain10x = document.getElementById('btn-train-10x');
-    if (btnTrain10x) {
-      btnTrain10x.addEventListener('click', () => {
-        this.tutor.trainBatch(10);
+    // High-speed autonomous batch training buttons
+    const btnTrain25x = document.getElementById('btn-train-25x');
+    if (btnTrain25x) {
+      btnTrain25x.addEventListener('click', () => {
+        this.tutor.trainBatch(25);
       });
     }
 
-    const btnTrain50x = document.getElementById('btn-train-50x');
-    if (btnTrain50x) {
-      btnTrain50x.addEventListener('click', () => {
-        this.tutor.trainBatch(50);
+    const btnTrain100x = document.getElementById('btn-train-100x');
+    if (btnTrain100x) {
+      btnTrain100x.addEventListener('click', () => {
+        this.tutor.trainBatch(100);
       });
     }
 
-    const btnTrain200x = document.getElementById('btn-train-200x');
-    if (btnTrain200x) {
-      btnTrain200x.addEventListener('click', () => {
-        this.tutor.trainBatch(200);
+    const btnCompleteStage = document.getElementById('btn-complete-stage');
+    if (btnCompleteStage) {
+      btnCompleteStage.addEventListener('click', () => {
+        this.tutor.completeCurrentStage();
+      });
+    }
+
+    const btnMasterAll = document.getElementById('btn-master-all');
+    if (btnMasterAll) {
+      btnMasterAll.addEventListener('click', () => {
+        this.tutor.masterAllStages();
       });
     }
   }

@@ -46,43 +46,29 @@
       <section id="col-left">
         <!-- TEACHING & CURRICULUM CONTROLS -->
         <div class="panel-section">
-          <div class="sec-title">[CURRICULUM AUTO-TUTOR: HIGH-SPEED TEACHING]</div>
+          <div class="sec-title">[AUTONOMOUS MASTER TEACHER: 6-STAGE PEDAGOGICAL CURRICULUM]</div>
           <div class="ctrl-row">
+            <button type="button" id="btn-toggle-tutor" class="txt-btn btn-primary">[Start Autonomous Teacher]</button>
             <span>Speed:</span>
-            <select id="tutor-speed-select" class="txt-select" title="Training Execution Speed">
+            <select id="tutor-speed-select" class="txt-select" title="Autonomous Execution Speed">
               <option value="INSTANT">Instant (0ms loop)</option>
               <option value="TURBO" selected>Turbo (15ms)</option>
               <option value="FAST">Fast (70ms)</option>
               <option value="NORMAL">Normal (250ms + Audio)</option>
             </select>
-            <span>Module:</span>
-            <select id="tutor-module-select" class="txt-select" title="Curriculum Lesson">
-              <option value="0">Mod 1: Greetings & Identity</option>
-              <option value="1">Mod 2: Anatomy & Senses</option>
-              <option value="2">Mod 3: Sucrose & Joy</option>
-              <option value="3">Mod 4: Flight & Speed</option>
-              <option value="4">Mod 5: Mood & Dopamine</option>
-              <option value="5">Mod 6: Human Friendship</option>
-              <option value="6">Mod 7: Logic & "Why"</option>
-              <option value="7">Mod 8: Complex Discourse</option>
-              <option value="8">Mod 9: Fly Curiosity</option>
-              <option value="9">Mod 10: Deep Reflections</option>
-              <option value="INFINITE">Continuous Training</option>
-            </select>
-          </div>
-          <div class="ctrl-row" style="margin-top: 4px;">
-            <button type="button" id="btn-toggle-tutor" class="txt-btn btn-primary">[Start Auto-Tutor]</button>
-            <button type="button" id="btn-step-tutor" class="txt-btn">[Step 1]</button>
-            <button type="button" id="btn-train-10x" class="txt-btn">[Train 10x]</button>
-            <button type="button" id="btn-train-50x" class="txt-btn">[Train 50x]</button>
-            <button type="button" id="btn-train-200x" class="txt-btn">[Train 200x]</button>
+            <button type="button" id="btn-step-tutor" class="txt-btn">[Step 1 Trial]</button>
+            <button type="button" id="btn-train-25x" class="txt-btn">[Train 25x]</button>
+            <button type="button" id="btn-train-100x" class="txt-btn">[Train 100x]</button>
+            <button type="button" id="btn-complete-stage" class="txt-btn">[Complete Current Stage]</button>
+            <button type="button" id="btn-master-all" class="txt-btn btn-success">[Master All 6 Stages]</button>
           </div>
           <div class="status-row" style="margin-top: 4px;">
             <span>Status: <b id="tutor-status-badge">Idle</b></span>
             <span class="sep">|</span>
-            <span>Lesson: <span id="tutor-lesson-label">Lesson 1: Greetings & Identity</span></span>
-            <span class="sep">|</span>
-            <span>Mastery: <b id="tutor-progress-pct">0 / 60 (0.0%)</b></span>
+            <span>Mastery: <b id="tutor-progress-pct">0 / 67 (0.0%)</b></span>
+          </div>
+          <div class="status-row" style="margin-top: 2px;">
+            <span id="tutor-lesson-label" class="c-blue">Stage 1: Primary Operant Conditioning (All 21 Atomic Tokens)</span>
           </div>
           <div class="ascii-bar-row">
             Progress: <span id="tutor-ascii-bar" class="ascii-bar">[----------------------------------------] 0.0%</span>
