@@ -12,12 +12,18 @@
 // - Dynamic never-ending open conversational discourse!
 
 export class CurriculumTutorBot {
-  constructor(engine, speechSynth, fly3D, connectome3D, ui) {
+  constructor(engine, speechSynth, ui = null) {
     this.engine = engine;
     this.speech = speechSynth;
-    this.fly3D = fly3D;
-    this.connectome3D = connectome3D;
-    this.ui = ui;
+    if (arguments.length >= 5) {
+      this.fly3D = arguments[2];
+      this.connectome3D = arguments[3];
+      this.ui = arguments[4];
+    } else {
+      this.fly3D = null;
+      this.connectome3D = null;
+      this.ui = ui;
+    }
 
     this.isRunning = false;
     this.isWaitingForFly = false;

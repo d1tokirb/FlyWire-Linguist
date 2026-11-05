@@ -3,343 +3,156 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FlyWire : Drosophila Linguist</title>
+    <title>FlyWire-Linguist : Drosophila Mushroom Body Connectome</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="app-container">
-      <!-- APPLE GLOBAL HEADER -->
-      <header id="top-bar">
-        <div class="brand-section">
-          <div class="brand-logo">
-            <span>FlyWire</span>
-            <span style="color: var(--text-secondary); font-weight: 400;">LINGUIST</span>
-          </div>
-          <span class="brand-badge">139k Neurons</span>
-          <span class="brand-badge badge-vocab" id="badge-vocab-count">0 Words</span>
+    <div id="app">
+      <!-- HEADER -->
+      <header id="header">
+        <div class="brand">
+          <h1>FlyWire-Linguist</h1>
+          <span class="sub">Drosophila Connectome Learning (FAFB v783)</span>
+          <span class="badge" id="val-stage-name">Tabula Rasa</span>
         </div>
-
-        <!-- FLUENCY STAGE CAPSULE -->
-        <div class="stage-capsule" id="top-stage-capsule">
-          <span style="color: var(--text-secondary); font-size: 11px;">Stage</span>
-          <span id="stage-capsule-lbl" style="font-weight: 600; color: var(--apple-orange);">Stage 0: Babble & Clicks</span>
-        </div>
-
-        <div class="top-controls">
-          <button id="btn-audio" class="apple-pill-btn active" title="Toggle Fly Text-To-Speech & Insectoid Audio">
-            <span id="audio-icon">[Audio]</span>
-            <span id="audio-label">On</span>
-          </button>
-
-          <button id="btn-sucrose" class="apple-pill-btn btn-sucrose" title="Feed 10% sucrose drop to trigger PAM dopamine reward and synaptic plasticity">
-            <span>+PAM</span>
-            <span>Feed Sugar</span>
-          </button>
-
-          <button id="btn-export-lexicon" class="apple-pill-btn" title="Export learned vocabulary and synaptic weights to JSON">
-            <span>Export Brain</span>
-          </button>
-
-          <button id="btn-reset-brain" class="apple-pill-btn btn-danger" title="Wipe learned memory back to Tabula Rasa">
-            <span>Reset Brain</span>
-          </button>
+        <div class="header-actions">
+          <button id="btn-audio" class="btn" title="Toggle insectoid audio output">[Audio: On]</button>
+          <button id="btn-sucrose" class="btn btn-success" title="Feed sucrose (+PAM reward)">+PAM Sugar</button>
+          <button id="btn-aversion" class="btn btn-warning" title="Administer looming error (-PPL1 punishment)">-PPL1 Aversion</button>
+          <button id="btn-export-lexicon" class="btn" title="Export learned brain state as JSON">Export Brain</button>
+          <button id="btn-reset-brain" class="btn btn-danger" title="Reset connectome to Tabula Rasa">Reset Tabula Rasa</button>
         </div>
       </header>
 
-      <!-- MAIN WORKSPACE -->
-      <main id="workspace">
-        <!-- 3D VIEWPORT CONTAINER -->
-        <div id="viewport-container">
-          <canvas id="three-canvas"></canvas>
-
-          <!-- APPLE FLOATING SEGMENTED VIEW DOCK (BOTTOM CENTER) -->
-          <nav class="view-segmented-dock">
-            <button class="segment-item active" data-view="LINGUIST_RIG">Linguist Rig</button>
-            <button class="segment-item" data-view="MACRO_FACE">Macro Face</button>
-            <button class="segment-item" data-view="CONNECTOME_3D">3D Connectome</button>
-            <button class="segment-item" data-view="ACOUSTIC_CHAMBER">Acoustic Chamber</button>
-          </nav>
-
-          <!-- FLOATING APPLE CHAT INTERFACE OVERLAY -->
-          <div id="chat-window-container">
-            <div class="chat-header">
-              <div class="chat-traffic-lights">
-                <div class="traffic-light traffic-close" id="chat-close" title="Minimize chat window"></div>
-                <div class="traffic-light traffic-min"></div>
-                <div class="traffic-light traffic-max"></div>
-              </div>
-              <div class="chat-title">
-                <span>Drosophila Synaptic Chat</span>
-              </div>
-              <span class="chat-live-indicator">Online Plasticity</span>
+      <!-- MAIN SPLIT LAYOUT -->
+      <main id="main-content">
+        <!-- LEFT: CHAT & AUTO-TUTOR INTERFACE -->
+        <section id="chat-section">
+          <!-- AUTO-TUTOR PANEL -->
+          <div id="tutor-bar">
+            <div class="tutor-controls-row">
+              <span class="tutor-badge" id="tutor-status-badge">Tutor: Idle</span>
+              <select id="tutor-module-select" class="select-input" title="Curriculum Module">
+                <option value="0">Mod 1: Greetings & Identity</option>
+                <option value="1">Mod 2: Anatomy & Senses</option>
+                <option value="2">Mod 3: Sucrose & Joy</option>
+                <option value="3">Mod 4: Flight & Speed</option>
+                <option value="4">Mod 5: Mood & Dopamine</option>
+                <option value="5">Mod 6: Human Friendship</option>
+                <option value="6">Mod 7: Logic & "Why"</option>
+                <option value="7">Mod 8: Complex Discourse</option>
+                <option value="8">Mod 9: Fly Curiosity</option>
+                <option value="9">Mod 10: Deep Reflections</option>
+                <option value="INFINITE">Continuous Training</option>
+              </select>
+              <select id="tutor-speed-select" class="select-input" title="Training Speed">
+                <option value="NORMAL">1x Speed</option>
+                <option value="FAST">2x Speed</option>
+                <option value="TURBO">5x Turbo</option>
+              </select>
+              <button type="button" id="btn-toggle-tutor" class="btn btn-primary">Start Auto-Tutor</button>
+              <button type="button" id="btn-step-tutor" class="btn">Step</button>
             </div>
-
-            <!-- AUTOMATED CURRICULUM TUTOR BOT CONTROL DOCK -->
-            <div class="chat-tutor-banner" id="chat-tutor-bar">
-              <div class="tutor-header-row">
-                <div class="tutor-info">
-                  <span class="tutor-avatar">[Tutor]</span>
-                  <span class="tutor-title">Auto-Tutor Bot</span>
-                  <span class="tutor-status-badge paused" id="tutor-status-badge">Idle</span>
-                </div>
-                <div class="tutor-controls">
-                  <select id="tutor-module-select" class="tutor-speed-select" title="Jump to Conversational Module">
-                    <option value="0">Mod 1: Greetings & Identity</option>
-                    <option value="1">Mod 2: Anatomy & Senses</option>
-                    <option value="2">Mod 3: Sucrose & Joy</option>
-                    <option value="3">Mod 4: Flight & Speed</option>
-                    <option value="4">Mod 5: Mood & Dopamine</option>
-                    <option value="5">Mod 6: Human Friendship</option>
-                    <option value="6">Mod 7: Logic & "Why"</option>
-                    <option value="7">Mod 8: Complex Discourse</option>
-                    <option value="8">Mod 9: Fly Curiosity</option>
-                    <option value="9">Mod 10: Deep Reflections</option>
-                    <option value="INFINITE">Continuous Training</option>
-                  </select>
-                  <select id="tutor-speed-select" class="tutor-speed-select" title="Tutor Training Speed">
-                    <option value="NORMAL">1x (Real-time)</option>
-                    <option value="FAST">2x (Fast)</option>
-                    <option value="TURBO">5x (Turbo)</option>
-                  </select>
-                  <button type="button" id="btn-toggle-tutor" class="tutor-toggle-btn" title="Toggle autonomous curriculum training">
-                    Start Auto-Tutor
-                  </button>
-                  <button type="button" id="btn-step-tutor" class="tutor-step-btn" title="Step next question immediately">
-                    Step
-                  </button>
-                </div>
-              </div>
-              <div class="tutor-curriculum-row">
-                <span class="tutor-lesson-label" id="tutor-lesson-label">Lesson 1: Greetings & Acoustic Salience</span>
-                <span class="tutor-progress-pct" id="tutor-progress-pct">0% Complete</span>
-              </div>
-              <div class="tutor-progress-track">
-                <div class="tutor-progress-fill" id="tutor-progress-fill" style="width: 0%;"></div>
-              </div>
+            <div class="tutor-status-row">
+              <span id="tutor-lesson-label">Lesson 1: Greetings & Identity</span>
+              <span id="tutor-progress-pct">0% Mastered</span>
             </div>
-
-            <!-- CHAT MESSAGE THREAD -->
-            <div id="chat-thread" class="chat-messages-area">
-              <!-- Dynamically populated messages -->
+            <div class="progress-bar-bg">
+              <div id="tutor-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
             </div>
-
-            <!-- CURRICULUM FLASHCARD SUGGESTIONS -->
-            <div class="chat-flashcards-bar">
-              <span class="flashcard-label">Curriculum:</span>
-              <button class="flashcard-pill" data-phrase="go">"go"</button>
-              <button class="flashcard-pill" data-phrase="stop">"stop"</button>
-              <button class="flashcard-pill" data-phrase="left">"left"</button>
-              <button class="flashcard-pill" data-phrase="right">"right"</button>
-              <button class="flashcard-pill" data-phrase="hello fly">"hello fly"</button>
-              <button class="flashcard-pill" data-phrase="want sugar">"want sugar"</button>
-              <button class="flashcard-pill" data-phrase="good smart fly">"good smart fly"</button>
-            </div>
-
-            <!-- CHAT INPUT COMPOSER -->
-            <form id="chat-form" class="chat-input-row" autocomplete="off">
-              <input
-                type="text"
-                id="chat-input"
-                class="apple-chat-input"
-                placeholder="Type to teach the fly English (e.g. 'Hello', 'I am human')..."
-                autocomplete="off"
-              />
-              <button type="submit" id="btn-chat-send" class="chat-send-btn" title="Send message to fly [Enter]">
-                <span>Teach</span>
-                <span style="font-size: 11px;">[Enter]</span>
-              </button>
-            </form>
           </div>
 
-          <!-- HUD CAMERA & ORBIT GUIDE -->
-          <div id="hud-camera-pill" class="hud-camera-overlay">
-            <span class="hud-key">Drag</span> <span class="hud-action">360° Orbit</span>
-            <span class="hud-sep">•</span>
-            <span class="hud-key">Scroll</span> <span class="hud-action">Zoom</span>
-            <span class="hud-sep">•</span>
-            <button id="btn-recenter-cam" class="hud-clickable-btn" title="Recenter Viewpoint">
-              <span class="hud-key">C</span> <span>Recenter</span>
-            </button>
+          <!-- CHAT MESSAGE LOG -->
+          <div id="chat-thread" class="chat-thread"></div>
+
+          <!-- QUICK PROMPT SUGGESTIONS -->
+          <div class="quick-prompts">
+            <span class="quick-label">Prompt:</span>
+            <button type="button" class="pill-btn" data-phrase="go">go</button>
+            <button type="button" class="pill-btn" data-phrase="stop">stop</button>
+            <button type="button" class="pill-btn" data-phrase="left">left</button>
+            <button type="button" class="pill-btn" data-phrase="right">right</button>
+            <button type="button" class="pill-btn" data-phrase="hello fly">hello fly</button>
+            <button type="button" class="pill-btn" data-phrase="want sugar">want sugar</button>
+            <button type="button" class="pill-btn" data-phrase="good smart fly">good smart fly</button>
           </div>
-        </div>
 
-        <!-- RIGHT SIDEBAR: APPLE GLASS TELEMETRY -->
-        <aside id="telemetry-panel">
-          <!-- CARD 1: LINGUISTIC TELEMETRY & FLUENCY MATRIX -->
-          <section class="apple-card">
-            <div class="card-header">
-              <span class="card-title">Conditioning & Plasticity Telemetry</span>
-              <span class="card-badge" id="val-stage-name">Tabula Rasa</span>
-            </div>
+          <!-- INPUT FORM -->
+          <form id="chat-form" class="chat-form">
+            <input
+              type="text"
+              id="chat-input"
+              class="text-input"
+              placeholder="Send command or token to fly (e.g. 'go left', 'want sugar')..."
+              autocomplete="off"
+            />
+            <button type="submit" id="btn-chat-send" class="btn btn-primary">Send</button>
+          </form>
+        </section>
 
-            <div class="fluency-hero">
-              <div>
-                <div class="fluency-val-hero" id="val-fluency-score">0%</div>
-                <div class="fluency-lbl-hero">PLASTICITY INDEX (LTD)</div>
+        <!-- RIGHT: CONNECTOME & PLASTICITY TELEMETRY -->
+        <aside id="telemetry-section">
+          <!-- CARD 1: PLASTICITY & BIOLOGICAL METRICS -->
+          <div class="panel">
+            <h2>Conditioning & Plasticity</h2>
+            <div class="metric-grid">
+              <div class="metric">
+                <span class="metric-label">Plasticity Index (LTD)</span>
+                <span class="metric-value highlight" id="val-fluency-score">0%</span>
               </div>
-              <div style="text-align: right;">
-                <div class="fluency-sub-val" id="val-vocab-size">0 tokens</div>
-                <div class="fluency-lbl-hero">AUDITORY BUFFER</div>
+              <div class="metric">
+                <span class="metric-label">Depressed KC Synapses</span>
+                <span class="metric-value highlight" id="val-depressed-synapses">0 / 7,537</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Active Kenyon Cells</span>
+                <span class="metric-value" id="val-active-kcs">0 / 2,597</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">APL GABA Inhibition</span>
+                <span class="metric-value" id="val-apl-inhibition">0.00 GABA</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">PAM Dopamine</span>
+                <span class="metric-value" id="val-pam-dopamine">35%</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">PPL1 Aversion</span>
+                <span class="metric-value" id="val-ppl1-aversion">10%</span>
               </div>
             </div>
+            <div class="info-row">
+              <span class="info-label">Winning MBON:</span>
+              <span class="info-value" id="val-winning-mbon">Resting</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Active Compartment:</span>
+              <span class="info-value" id="val-active-compartment">gamma5</span>
+            </div>
+          </div>
 
-            <!-- FLUENCY PROGRESS BAR -->
-            <div class="fluency-progress-track">
-              <div id="fluency-progress-bar" class="fluency-progress-fill" style="width: 0%;"></div>
+          <!-- CARD 2: CONDITIONING EXPERIMENTS -->
+          <div class="panel">
+            <h2>Conditioning Experiments</h2>
+            <div class="button-row">
+              <button type="button" id="btn-exp-train-commands" class="btn btn-sm">Train: Go / Left / Right</button>
+              <button type="button" id="btn-exp-extinction" class="btn btn-sm">Extinction Trial</button>
+              <button type="button" id="btn-exp-generalize" class="btn btn-sm">Generalization Test</button>
             </div>
+            <div id="exp-result-log" class="log-box">Ready for connectome conditioning experiments.</div>
+          </div>
 
-            <div class="activity-grid">
-              <div class="activity-tile">
-                <div class="tile-label">Words Heard</div>
-                <div class="tile-value" id="val-words-heard">0 words</div>
-              </div>
-              <div class="activity-tile">
-                <div class="tile-label">Utterances Spoken</div>
-                <div class="tile-value" id="val-utterances-spoken">0 outputs</div>
-              </div>
-              <div class="activity-tile">
-                <div class="tile-label">Babble Syllables</div>
-                <div class="tile-value" id="val-babble-syllables">0 syllables</div>
-              </div>
-              <div class="activity-tile">
-                <div class="tile-label">Synaptic Associations</div>
-                <div class="tile-value" id="val-associations-count">0 pathways</div>
-              </div>
+          <!-- CARD 3: LEARNED LEXICON -->
+          <div class="panel">
+            <h2>Learned Lexicon</h2>
+            <div id="lexicon-cloud" class="lexicon-cloud">
+              <div class="empty-lexicon">Tabula Rasa: No conditioned words yet.</div>
             </div>
-          </section>
-
-          <!-- CARD 2: DROSOPHILA BIOLOGICAL DOPAMINE & LEARNING -->
-          <section class="apple-card">
-            <div class="card-header">
-              <span class="card-title">Synaptic Plasticity & Biology</span>
-              <span class="card-badge" style="color: var(--apple-green);">[Active] STDP</span>
-            </div>
-
-            <div class="bio-hero">
-              <div class="bio-value" id="val-pam-dopamine">35%</div>
-              <div class="bio-status">
-                <div class="status-capsule" id="bio-state-lbl">PAM Dopamine Plasticity</div>
-              </div>
-            </div>
-
-            <div class="benchmark-bar">
-              <div class="bench-row">
-                <span class="bench-label">PAM Reward Level:</span>
-                <span class="bench-val" id="bench-pam-val" style="color: var(--apple-green);">Baseline (+Sugar for Surge)</span>
-              </div>
-              <div class="bench-row">
-                <span class="bench-label">PPL1 Looming Error:</span>
-                <span class="bench-val" id="val-ppl1-aversion" style="color: var(--text-secondary);">10%</span>
-              </div>
-              <div class="bench-row">
-                <span class="bench-label">Johnston's Organ:</span>
-                <span class="bench-val" style="color: var(--apple-blue);">Acoustic Resonant (200 Hz)</span>
-              </div>
-            </div>
-          </section>
-
-          <!-- CARD 3: FLYWIRE MUSHROOM BODY COMPARTMENTAL PLASTICITY -->
-          <section class="apple-card">
-            <div class="card-header">
-              <span class="card-title">FlyWire Mushroom Body (15 Compartments)</span>
-              <span class="card-badge" id="val-kc-sparsity-badge">5.0% Sparse</span>
-            </div>
-
-            <div class="activity-grid" style="margin-bottom: 8px;">
-              <div class="activity-tile">
-                <div class="tile-label">Active Kenyon Cells</div>
-                <div class="tile-value" id="val-active-kcs" style="color: var(--apple-cyan);">0 / 2,597</div>
-              </div>
-              <div class="activity-tile">
-                <div class="tile-label">APL Global Inhibition</div>
-                <div class="tile-value" id="val-apl-inhibition">0.00 GABA</div>
-              </div>
-              <div class="activity-tile">
-                <div class="tile-label">Compartment LTD Delta</div>
-                <div class="tile-value" id="val-ltd-delta" style="color: var(--apple-green);">0 / trial</div>
-              </div>
-              <div class="activity-tile">
-                <div class="tile-label">Total Depressed KC Synapses</div>
-                <div class="tile-value" id="val-depressed-synapses" style="color: var(--apple-green);">0 / 7,537</div>
-              </div>
-            </div>
-
-            <!-- COMPARTMENT-SPECIFIC REINFORCEMENT STATUS -->
-            <div class="bench-row" style="margin-bottom: 6px;">
-              <span class="bench-label">Active Compartment:</span>
-              <span class="bench-val" id="val-active-compartment" style="color: var(--apple-blue);">γ5 (Appetitive / Reward)</span>
-            </div>
-            <div class="bench-row" style="margin-bottom: 8px;">
-              <span class="bench-label">Winning MBON:</span>
-              <span class="bench-val" id="val-winning-mbon" style="color: var(--apple-yellow);">Resting</span>
-            </div>
-
-            <!-- 15 ANATOMICAL COMPARTMENTS MINI-GRID -->
-            <div class="compartments-mini-grid" id="mb-compartments-grid">
-              <span class="comp-badge" data-comp="gamma1">γ1</span>
-              <span class="comp-badge" data-comp="gamma2">γ2</span>
-              <span class="comp-badge" data-comp="gamma3">γ3</span>
-              <span class="comp-badge" data-comp="gamma4">γ4</span>
-              <span class="comp-badge active" data-comp="gamma5">γ5</span>
-              <span class="comp-badge" data-comp="alpha1">α1</span>
-              <span class="comp-badge" data-comp="alpha2">α2</span>
-              <span class="comp-badge" data-comp="alpha3">α3</span>
-              <span class="comp-badge" data-comp="beta1">β1</span>
-              <span class="comp-badge" data-comp="beta2">β2</span>
-              <span class="comp-badge" data-comp="alpha_prime1">α'1</span>
-              <span class="comp-badge" data-comp="alpha_prime2">α'2</span>
-              <span class="comp-badge" data-comp="alpha_prime3">α'3</span>
-              <span class="comp-badge" data-comp="beta_prime1">β'1</span>
-              <span class="comp-badge" data-comp="beta_prime2">β'2</span>
-            </div>
-
-            <!-- CONDITIONING & GENERALIZATION EXPERIMENT TOOLS -->
-            <div class="mb-experiment-bar">
-              <div class="exp-title">Connectome Plasticity Experiments:</div>
-              <div class="exp-btn-row">
-                <button type="button" id="btn-exp-train-commands" class="exp-pill-btn" title="Condition fly on vocabulary: left, right, go, stop">
-                  Train: "Go / Left / Right"
-                </button>
-                <button type="button" id="btn-exp-extinction" class="exp-pill-btn" title="Run unrewarded extinction trial to test decay">
-                  Extinction Trial
-                </button>
-                <button type="button" id="btn-exp-generalize" class="exp-pill-btn" title="Test pattern overlap between 'go left' and 'stop right'">
-                  Generalization Test
-                </button>
-              </div>
-              <div id="exp-result-log" class="exp-result-text">Ready for connectome conditioning experiments.</div>
-            </div>
-          </section>
-
-          <!-- CARD 4: ACTIVE SYNAPTIC LEXICON CLOUD -->
-          <section class="apple-card lexicon-card">
-            <div class="card-header">
-              <span class="card-title">Learned Vocabulary Lexicon</span>
-              <span style="font-size: 10px; color: var(--text-secondary);">Click token to type</span>
-            </div>
-            <div id="lexicon-cloud" class="lexicon-cloud-area">
-              <div class="empty-lexicon">
-                <span>[Tabula Rasa]</span>
-                <span>No words imprinted yet.</span>
-              </div>
-            </div>
-          </section>
-
-          <!-- CARD 4: 60 FPS NEURAL & ACOUSTIC OSCILLOSCOPE -->
-          <section class="apple-card">
-            <div class="card-header">
-              <span class="card-title">Neural & Formant Oscilloscope</span>
-              <span class="live-tag">60 FPS Real-Time</span>
-            </div>
-            <div class="oscilloscope-container">
-              <canvas id="oscilloscope-canvas" width="340" height="90"></canvas>
-            </div>
-          </section>
+          </div>
         </aside>
       </main>
     </div>
 
-    <!-- SCRIPT ENTRYPOINT -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

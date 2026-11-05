@@ -20,7 +20,6 @@
     "synaptic-plasticity",
     "mushroom-body",
     "speech-synthesis",
-    "threejs",
     "web-audio"
   ],
   "author": "d1tokirb",
@@ -28,9 +27,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/d1tokirb/FlyWire-Linguist.git"
-  },
-  "dependencies": {
-    "three": "^0.170.0"
   },
   "devDependencies": {
     "vite": "^5.4.0"

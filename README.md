@@ -24,7 +24,7 @@ The model does not employ pretrained large language models, regular-expression i
 4. **Sparse High-Dimensional Expansion**: Divisive feedback inhibition mediated by the Anterior Paired Lateral (APL) GABAergic neuron enforcing ~5.0% sparsity (~130 active KCs).
 5. **15 Anatomical Mushroom Body Compartments**: Compartmental tiling across vertical (alpha, alpha') and horizontal (beta, beta', gamma) lobes, with neurotransmitter classifications verified against electron microscopy vesicle predictions.
 6. **Action-Gated Scalar Reinforcement Learning**: PAM (reward) and PPL1 (aversive) dopaminergic clusters operating on scalar environmental feedback ($R \in \{-1.0, +1.0\}$) without target answer leakage into the network.
-7. **Interactive 3D Kinematic Model**: An articulated Drosophila rig with ruby ommatidia compound eyes, responsive proboscis extension reflex (PER), vibrating wings, miniature headphones, studio microphone, and holographic acoustic frequency analyzer.
+7. **Streamlined Research Interface**: A lightweight, minimal-code telemetry dashboard providing live readout of plasticity metrics, active Kenyon cells, APL inhibition, dopamine state, audio speech synthesis, and an automated curriculum tutor bot.
 
 ---
 
@@ -204,12 +204,10 @@ FlyWire-Linguist/
 │   ├── mushroomBodyConnectome.js                # Core connectome (2,597 KCs, LTD plasticity)
 │   ├── synapticLanguageEngine.js                # Purely neural response engine
 │   ├── curriculumTutorBot.js                    # Autonomous pedagogical agent
-│   ├── flyLinguist3D.js                         # 3D Drosophila anatomical model
-│   ├── connectomeLanguage3D.js                  # 3D Kenyon cell point-cloud visualizer
 │   ├── drosophilaSpeechSynth.js                 # Formant-shifted insectoid audio
-│   ├── telemetryUI.js                           # Real-time telemetry dashboard
+│   ├── telemetryUI.js                           # Real-time telemetry coordinator
 │   ├── main.js                                  # Application controller
-│   └── style.css                                # Glassmorphism UI styling
+│   └── style.css                                # Minimalist dark scientific UI styling
 ├── index.html                                   # Web application entrypoint
 ├── package.json                                 # Manifest and dependencies
 ├── LICENSE                                      # MIT License
