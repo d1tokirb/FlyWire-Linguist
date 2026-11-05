@@ -162,18 +162,19 @@ export class SynapticLanguageEngine {
   }
 
   // Generate Response directly from Biological Mushroom Body Connectome activity
-  generateResponse(userText) {
+  generateResponse(userText, options = {}) {
     this.totalUtterancesSpoken++;
     this.conversationalTurnCount++;
     const stageInfo = this.getFluencyStage();
     const stage = stageInfo.stage;
     const tokens = this.tokenize(userText);
+    const temperature = (typeof options.temperature === 'number') ? options.temperature : 0.0;
 
     // 1. Ingest prompt into sensory tracking and lexicon
     this.learnFromInput(userText);
 
     // 2. Execute authentic biological Mushroom Body forward pass
-    const mbResult = this.mb.forward(tokens);
+    const mbResult = this.mb.forward(tokens, temperature);
     this.lastActiveKCCount = mbResult.activeKCCount;
     this.lastKCSparsity = mbResult.sparsityPct;
     this.lastWinningMBON = mbResult.topMBONs[0];
@@ -194,10 +195,18 @@ export class SynapticLanguageEngine {
     const topActivity = topMBON ? topMBON.activity : 0;
     const secondActivity = mbResult.topMBONs.length > 1 ? mbResult.topMBONs[1].activity : 0;
     const activityContrast = topActivity - secondActivity;
+    const relativeContrast = topActivity > 1e-6 ? (activityContrast / topActivity) : 0.0;
 
-    // In Tabula Rasa or unconditioned state (no depressed synapses or zero contrast),
-    // the fly produces natural insect acoustic babble and clicks
-    if (stage === 0 || depressedCount < 6 || activityContrast < 0.15) {
+    // Active chosen token: in softmax exploration, mbResult.chosenLabel; in argmax, topMBON.label
+    const chosenToken = mbResult.chosenLabel || (topMBON ? topMBON.label : '');
+    const chosenIdx = mbResult.chosenIdx;
+
+    // Calibrated speech gate based on empirical neural response margins:
+    // Tabula Rasa (0-2 depressed synapses): fly produces natural insect acoustic phonemes and clicks.
+    // Conditioned state (>= 3 depressed synapses with positive neural margin): expresses learned MBON motor token.
+    const isUnconditioned = (depressedCount < 3 || relativeContrast < 0.02);
+
+    if (isUnconditioned) {
       const numSyllables = 2 + Math.floor(Math.random() * 3);
       const parts = [];
       for (let i = 0; i < numSyllables; i++) {
@@ -210,18 +219,18 @@ export class SynapticLanguageEngine {
       circuit = `Subesophageal Babble Motor - Tabula Rasa (KCs: ${mbResult.activeKCCount}/2,597 active)`;
       this.totalSyllablesBabble += numSyllables;
     } else {
-      // Conditioned response: Driven directly by winning MBONs!
-      responseWords = [topMBON.label];
+      // Conditioned response: Driven directly by the chosen winning MBON!
+      responseWords = [chosenToken];
 
-      // If secondary MBON is also strongly active (>85% of top), include it (compound response)
-      if (mbResult.topMBONs.length > 1 && mbResult.topMBONs[1].activity > 0.85 * topActivity) {
+      // If secondary MBON is also strongly active (>90% of top), include it (compound response)
+      if (mbResult.topMBONs.length > 1 && mbResult.topMBONs[1].activity > 0.90 * topActivity && mbResult.topMBONs[1].label !== chosenToken) {
         responseWords.push(mbResult.topMBONs[1].label);
       }
 
-      // Prepend an insect acoustic marker (buzz/click) in 35% of utterances
-      const prefix = Math.random() < 0.35 ? 'bzz ' : '';
+      // Prepend an insect acoustic marker (buzz/click) in 25% of utterances
+      const prefix = Math.random() < 0.25 ? 'bzz ' : '';
       responseText = `${prefix}${responseWords.join(' ')}`;
-      confidence = Math.min(95, Math.floor(35 + (depressedCount / 60) * 45 + activityContrast * 15));
+      confidence = Math.min(99, Math.round(30 + Math.min(45, (depressedCount / 60) * 45) + Math.min(24, relativeContrast * 40)));
       circuit = `KC->MBON Conditioned Circuit (${topMBON.id} in ${topMBON.compartment} - ${topMBON.role})`;
     }
 
@@ -244,7 +253,14 @@ export class SynapticLanguageEngine {
       dopamine: this.pamDopamine,
       kcActive: mbResult.activeKCCount,
       kcSparsity: mbResult.sparsityPct,
-      winningMBON: mbResult.winningToken
+      winningMBON: topMBON ? topMBON.label : '',
+      chosenMBON: chosenToken,
+      chosenIdx,
+      topActivity,
+      secondActivity,
+      activityContrast,
+      relativeContrast,
+      isUnconditioned
     };
   }
 

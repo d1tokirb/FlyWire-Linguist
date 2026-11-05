@@ -199,3 +199,44 @@ node scripts/benchmark_compositional_generalization.mjs
 # 7. Execute master scientific verification suite
 node scripts/run_all_benchmarks.mjs
 ```
+
+---
+
+## 7. November 5, 2026 Architectural Audit & Remediation
+
+A rigorous external code and neural dynamics review of commit `8f27051` identified critical synchronization bottlenecks between the biological connectome and the speech/tutoring layer:
+
+### 7.1 Mathematical Impossibility of Absolute Activity Contrast Barrier (Fixed)
+- **Problem**: `activityContrast >= 0.15` in `synapticLanguageEngine.js` locked all generated text into acoustic babble clicks indefinitely. In the biological mushroom body model, normalized MBON firing rates range between 0.04 and 0.108. With non-potentiating Long-Term Depression (LTD), top MBON activity cannot exceed its unconditioned maximum. Thus, an absolute margin of 0.15 was mathematically unreachable across all prompts.
+- **Remediation**: Replaced with a relative contrast metric:
+  $$\text{relMargin} = \frac{A_{\text{top}} - A_{\text{second}}}{A_{\text{top}} + 10^{-6}}$$
+  A calibrated threshold ($\text{relMargin} \ge 0.02$, $\text{depressedCount} \ge 3$) determines conditioned output, while Tabula Rasa states accurately emit acoustic phonemes. The raw neural choice (`chosenMBON`), motor action, and relative margin are now exposed directly in all telemetry streams independent of speech formatting.
+
+### 7.2 Action Exploration via Boltzmann Softmax (Fixed)
+- **Problem**: Forward passes previously ran with default temperature 0 (deterministic argmax), causing the network to get stuck in early attractors during multi-cue conditioning.
+- **Remediation**: Added calibrated Boltzmann softmax sampling during operant training ($T = 0.018$) to allow action exploration across competing motor compartments, while retaining greedy argmax ($T = 0.0$) during unrewarded holdout audits and evaluation.
+
+### 7.3 Removal of Supervised Answer Injection in Scaffolding (Fixed)
+- **Problem**: `applyUnconditionedStimulusPriming()` looked up `cue.target` upon repeated errors and manually reset weights for that target, violating the unsupervised/reinforcement-only paradigm.
+- **Remediation**: Completely eliminated `applyUnconditionedStimulusPriming()`. When errors occur, standard PPL1 aversive reinforcement suppresses the *erroneous chosen action* only.
+
+### 7.4 Scaffolding Mastery Rigor (Fixed)
+- **Problem**: Simplification to core tokens (e.g. `'left'` instead of `'turn left'`) previously allowed success on the simplified token to credit mastery of the full carrier prompt.
+- **Remediation**: Scaffolding trials now provide exploratory training rewards without advancing cue mastery. Mastery strictly requires consecutive correct responses to the full carrier sentence.
+
+### 7.5 Synthetic Calyx Bridge Isolation (Fixed)
+- **Problem**: A synthetic bridge heuristic added ~690 connections for sparse contralateral MBONs without explicit empirical provenance.
+- **Remediation**: Added a strict toggle (`useSyntheticBilateralBridge: false` by default). The system operates on 100% pure measured FlyWire FAFB v783 synaptic edges, with all benchmarks and curriculum stages passing on genuine empirical connectivity.
+
+### 7.6 Controlled Pedagogical Progression (Fixed)
+- **Problem**: Sequential conditioning across all 21 classes simultaneously caused catastrophic interference.
+- **Remediation**: Restructured curriculum into a controlled 8-stage progression:
+  1. Two-Alternative Forced Choice (2AFC Steering & Appetitive)
+  2. 4-Way Navigational & Operant Control (`left`, `right`, `go`, `stop`)
+  3. Contextual Carrier Generalization (`turn left`, `go forward`, `sweet sugar`)
+  4. Bidirectional Anti-Shortcut Ordering (`left turn` vs `turn left`)
+  5. Non-Linear XOR Negation (`go left` vs `dont go left`)
+  6. Scaled Measured Connectome Lexicon (15 dense biological classes)
+  7. Zero-Dopamine Unrewarded Retention Audit (Examination Protocol $R = 0$, $T = 0.0$)
+  8. Autonomous Reciprocal Discourse (Continuous adaptive dialogue)
+

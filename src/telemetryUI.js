@@ -124,11 +124,12 @@ export class TelemetryUI {
 
     const entry = document.createElement('div');
     entry.className = 'log-entry fly-entry';
-    const mbonInfo = res.winningMBON ? ` | MBON: ${res.winningMBON}` : '';
+    const chosenInfo = res.chosenMBON ? ` | Motor Action: ${res.chosenMBON}` : (res.winningMBON ? ` | MBON: ${res.winningMBON}` : '');
+    const contrastInfo = (typeof res.relativeContrast === 'number') ? ` | Contrast: ${(res.relativeContrast * 100).toFixed(1)}%` : '';
     entry.innerHTML = `
       <span class="log-time">${this.getTimeStr()}</span>
       <span class="log-speaker fly">[FLY]</span>
-      <span class="log-msg"><b>"${this.escapeHTML(res.text)}"</b> (${res.circuit}${mbonInfo}, Conf: ${res.confidence}%, KCs: ${res.kcActive || 0}/2,597)</span>
+      <span class="log-msg"><b>"${this.escapeHTML(res.text)}"</b> (${res.circuit}${chosenInfo}${contrastInfo}, Conf: ${res.confidence}%, KCs: ${res.kcActive || 0}/2,597)</span>
     `;
     this.chatThread.appendChild(entry);
     this.scrollToBottom();

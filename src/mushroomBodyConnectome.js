@@ -103,6 +103,10 @@ export class MushroomBodyConnectome {
     this.learningRateLTD = 0.22;
     this.recoveryRate = 0.003;
 
+    // Bilateral calyx bridge toggle (false by default for 100% pure measured FlyWire FAFB v783 edges)
+    this.useSyntheticBilateralBridge = options.useSyntheticBilateralBridge || false;
+    this.syntheticEdgesCount = 0;
+
     // Stats
     this.activeKCCount = 0;
     this.totalSynapticDepressions = 0;
@@ -192,29 +196,33 @@ export class MushroomBodyConnectome {
       }
     }
 
-    // Bilateral calyx bridge for contralateral/bilateral arborizing MBONs:
+    // Optional bilateral calyx bridge for contralateral/bilateral arborizing MBONs:
     // In whole-brain FAFB v783, bilateral MBONs arborize across both hemispheres.
     // If an MBON has < 30 reconstructed edges in the right unilateral slice,
-    // it samples from KCs passing through its target lobe compartment.
-    for (let j = 0; j < this.numMBONs; j++) {
-      let edgeCount = 0;
-      for (let i = 0; i < this.numKCs; i++) {
-        if (this.kcToMbonConnected[i * this.numMBONs + j] === 1) edgeCount++;
-      }
-      if (edgeCount < 30) {
-        const mbonComp = this.mbonDefinitions[j].compartment;
+    // this experimental condition allows sampling from KCs passing through its target lobe compartment.
+    // Kept strictly disabled by default (useSyntheticBilateralBridge: false) for pure empirical authenticity.
+    if (this.useSyntheticBilateralBridge) {
+      for (let j = 0; j < this.numMBONs; j++) {
+        let edgeCount = 0;
         for (let i = 0; i < this.numKCs; i++) {
-          if (this.kcCompartmentInnervations[i].has(mbonComp)) {
-            const hash = (i * 37 + j * 97) % 100;
-            if (hash < 14) {
-              const weightIdx = i * this.numMBONs + j;
-              if (this.kcToMbonConnected[weightIdx] === 0) {
-                const synCount = 6 + (hash % 8);
-                this.kcToMbonConnected[weightIdx] = 1;
-                this.kcToMbonSynapseCount[weightIdx] = synCount;
-                const normW = synCount / meanKCMBONSynapses;
-                this.kcToMbonBaselineWeights[weightIdx] = normW;
-                this.kcToMbonWeights[weightIdx] = normW;
+          if (this.kcToMbonConnected[i * this.numMBONs + j] === 1) edgeCount++;
+        }
+        if (edgeCount < 30) {
+          const mbonComp = this.mbonDefinitions[j].compartment;
+          for (let i = 0; i < this.numKCs; i++) {
+            if (this.kcCompartmentInnervations[i].has(mbonComp)) {
+              const hash = (i * 37 + j * 97) % 100;
+              if (hash < 14) {
+                const weightIdx = i * this.numMBONs + j;
+                if (this.kcToMbonConnected[weightIdx] === 0) {
+                  const synCount = 6 + (hash % 8);
+                  this.kcToMbonConnected[weightIdx] = 1;
+                  this.kcToMbonSynapseCount[weightIdx] = synCount;
+                  const normW = synCount / meanKCMBONSynapses;
+                  this.kcToMbonBaselineWeights[weightIdx] = normW;
+                  this.kcToMbonWeights[weightIdx] = normW;
+                  this.syntheticEdgesCount++;
+                }
               }
             }
           }
@@ -263,6 +271,9 @@ export class MushroomBodyConnectome {
       measuredKCToMBONSynapses: flywireSynapseStatistics.kc_to_mbon_total_synapses,
       measuredPNToKCEdges: flywirePNToKCEdges.length,
       measuredPNToKCSynapses: flywireSynapseStatistics.pn_to_kc_total_synapses,
+      useSyntheticBilateralBridge: this.useSyntheticBilateralBridge,
+      syntheticEdgesCount: this.syntheticEdgesCount,
+      pureMeasuredEdgesOnly: !this.useSyntheticBilateralBridge,
       sampleKCId: this.kcFlyWireIds[0],
       sampleMBONId: this.mbonDefinitions[0].flywireRootId || '720575940624117245',
       provenanceVerified: true
