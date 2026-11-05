@@ -10,7 +10,8 @@ import {
   flywireSynapseStatistics,
   flywirePNs,
   flywireKCToMBONEdges,
-  flywirePNToKCEdges
+  flywirePNToKCEdges,
+  flywireMBONDefinitions
 } from './flywireSynapseData.js';
 
 // Deterministic 32-bit PRNG for rigorous reproducible benchmarks across seeds
@@ -47,29 +48,8 @@ export class MushroomBodyConnectome {
     ];
 
     // Anatomically identified FlyWire MBON types and their assigned compartments
-    this.mbonDefinitions = [
-      { id: 'MBON01', compartment: 'gamma5', label: 'sugar', nt: 'ACh', role: 'Appetitive / Reward' },
-      { id: 'MBON02', compartment: 'beta2', label: 'want', nt: 'ACh', role: 'Desire / Approach' },
-      { id: 'MBON03', compartment: 'beta_prime2', label: 'left', nt: 'GABA', role: 'Left Steering' },
-      { id: 'MBON04', compartment: 'beta_prime2', label: 'right', nt: 'GABA', role: 'Right Steering' },
-      { id: 'MBON05', compartment: 'gamma4', label: 'go', nt: 'Glu', role: 'Forward Thrust' },
-      { id: 'MBON06', compartment: 'beta1', label: 'stop', nt: 'GABA', role: 'Halt / Brake' },
-      { id: 'MBON07', compartment: 'alpha1', label: 'hello', nt: 'Glu', role: 'Social Salience' },
-      { id: 'MBON09', compartment: 'gamma3', label: 'no', nt: 'GABA', role: 'Aversion / Veto' },
-      { id: 'MBON11', compartment: 'gamma1', label: 'bzz', nt: 'GABA/Glu', role: 'Aversive Alarm / Wingbuzz' },
-      { id: 'MBON14', compartment: 'alpha3', label: 'human', nt: 'ACh', role: 'Novel Organism / Face' },
-      { id: 'MBON18', compartment: 'alpha2', label: 'smart', nt: 'ACh', role: 'Cognitive State' },
-      { id: 'MBON20', compartment: 'gamma2', label: 'fly', nt: 'ACh', role: 'Self-Identity / PER' },
-      { id: 'MBON08', compartment: 'alpha_prime1', label: 'speak', nt: 'ACh', role: 'Acoustic Motor' },
-      { id: 'MBON10', compartment: 'beta_prime1', label: 'good', nt: 'ACh', role: 'Praise Valence' },
-      { id: 'MBON12', compartment: 'gamma2', label: 'clck', nt: 'Glu', role: 'Proboscis Click' },
-      { id: 'MBON13', compartment: 'alpha_prime2', label: 'sweet', nt: 'ACh', role: 'Gustatory Memory' },
-      { id: 'MBON15', compartment: 'alpha_prime3', label: 'listen', nt: 'Glu', role: 'Acoustic Attention' },
-      { id: 'MBON16', compartment: 'beta1', label: 'rest', nt: 'GABA', role: 'Quiescence' },
-      { id: 'MBON17', compartment: 'gamma5', label: 'happy', nt: 'ACh', role: 'PAM Excitation' },
-      { id: 'MBON19', compartment: 'beta2', label: 'yes', nt: 'ACh', role: 'Consent / Approach' },
-      { id: 'MBON21', compartment: 'gamma4', label: 'fast', nt: 'Glu', role: 'Wing Velocity' }
-    ];
+    // Neurotransmitters aligned strictly with EM vesicle annotations (Eckstein et al. 2024, Schlegel et al. 2024)
+    this.mbonDefinitions = flywireMBONDefinitions.map(def => ({ ...def }));
 
     // Enrich MBON definitions with authentic FlyWire root IDs
     for (const def of this.mbonDefinitions) {
@@ -259,60 +239,75 @@ export class MushroomBodyConnectome {
   }
 
   // Authentic Tonotopic Acoustic Sensory Encoding with Interleaved Temporal Delay Banks
-  // Bank A (Even PNs: 0, 2, 4...): Instantaneous acoustic phonemes (current word)
-  // Bank B (Odd PNs: 1, 3, 5...): Synaptic delay line / temporal memory trace (preceding word)
+  // Bank A (Even PNs: 0, 2, 4...): Instantaneous acoustic phonemes (current focal word)
+  // Bank B (Odd PNs: 1, 3, 5...): Temporal delay trace / preceding context words & modulatory signals
   encodeTokensToPNs(tokens) {
     this.pnActivity.fill(0.0);
     if (!tokens || tokens.length === 0) return this.pnActivity;
 
-    const half = Math.floor(this.numPNs / 2); // 155 channels per bank
+    const cleanTokens = tokens.map(t => t.toLowerCase().replace(/[^a-z0-9]/g, '')).filter(Boolean);
+    if (cleanTokens.length === 0) return this.pnActivity;
+
+    const half = Math.floor(this.numPNs / 2); // 104 channels per bank for 209 PNs
+
+    // Negation particle detection (inverts or modulates behavioral valence context)
+    const negWords = new Set(['not', 'no', 'dont', 'never', 'stop', 'halt', 'cant', 'cannot', 'neither', 'nor']);
+    const hasNeg = cleanTokens.some(t => negWords.has(t));
 
     // Biological phoneme acoustic filter bank (Johnston's Organ / AMMC frequency map)
     const phonemeMap = {
-      'a': [10, 35, 60], 'e': [8, 45, 75], 'i': [5, 55, 90],
-      'o': [8, 25, 45],  'u': [6, 20, 40], 'y': [6, 45, 80],
-      'b': [12, 18],     'd': [22, 28],    'g': [15, 24],
-      'p': [14, 20],     't': [25, 32],    'k': [18, 27],
-      'm': [30, 38],     'n': [42, 50],
-      's': [80, 95, 110],'z': [75, 90, 105],'f': [65, 80], 'v': [60, 75],
-      'l': [35, 48],     'r': [28, 42],    'w': [15, 30], 'h': [50, 68]
+      'a': [10, 35, 48], 'e': [8, 25, 45],  'i': [5, 28, 49],
+      'o': [8, 20, 38],  'u': [6, 18, 36],  'y': [6, 30, 46],
+      'b': [12, 18],     'd': [22, 28],     'g': [15, 24],
+      'p': [14, 20],     't': [25, 32],     'k': [18, 27],
+      'm': [30, 38],     'n': [36, 44],
+      's': [40, 46, 49], 'z': [38, 44, 48], 'f': [34, 42], 'v': [32, 40],
+      'l': [24, 36],     'r': [22, 34],     'w': [15, 28], 'h': [26, 38]
     };
 
-    const encodeWord = (word, isPrior) => {
-      const clean = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (!clean) return;
-      const bankOffset = isPrior ? 1 : 0;
-
-      for (let i = 0; i < clean.length; i++) {
-        const ch = clean[i];
-        const targets = phonemeMap[ch] || [40 + (ch.charCodeAt(0) % 50)];
-        const weight = 0.85 - (i * 0.05);
+    const encodeWord = (word, bankOffset, gain = 1.0) => {
+      for (let i = 0; i < word.length; i++) {
+        const ch = word[i];
+        const targets = phonemeMap[ch] || [20 + (ch.charCodeAt(0) % 30)];
+        const weight = Math.max(0.2, (0.85 - (i * 0.05))) * gain;
         targets.forEach(t => {
-          const chIdx = ((t % half) * 2) + bankOffset;
+          const chIdx = ((t % 50) * 2) + bankOffset;
           if (chIdx < this.numPNs) {
             this.pnActivity[chIdx] = Math.max(this.pnActivity[chIdx], weight);
           }
         });
       }
 
-      // Word lexical fingerprint residue (spread across channels 115..154)
+      // Word lexical fingerprint residue (spread across channels 50..69)
       let hash = 0;
-      for (let i = 0; i < clean.length; i++) {
-        hash = (hash * 31 + clean.charCodeAt(i)) & 0x7fffffff;
+      for (let i = 0; i < word.length; i++) {
+        hash = (hash * 31 + word.charCodeAt(i)) & 0x7fffffff;
       }
-      const h1 = ((115 + (hash % 20)) * 2) + bankOffset;
-      const h2 = ((135 + ((hash >> 5) % 19)) * 2) + bankOffset;
-      if (h1 < this.numPNs) this.pnActivity[h1] = Math.max(this.pnActivity[h1], 0.90);
-      if (h2 < this.numPNs) this.pnActivity[h2] = Math.max(this.pnActivity[h2], 0.90);
+      const h1 = ((50 + (hash % 10)) * 2) + bankOffset;
+      const h2 = ((60 + ((hash >> 5) % 10)) * 2) + bankOffset;
+      if (h1 < this.numPNs) this.pnActivity[h1] = Math.max(this.pnActivity[h1], 0.90 * gain);
+      if (h2 < this.numPNs) this.pnActivity[h2] = Math.max(this.pnActivity[h2], 0.90 * gain);
     };
 
-    if (tokens.length === 1) {
-      encodeWord(tokens[0], false);
-    } else {
-      const priorToken = tokens[tokens.length - 2];
-      const currentToken = tokens[tokens.length - 1];
-      encodeWord(currentToken, false);
-      encodeWord(priorToken, true);
+    // Focal token (final token in sequence) excites Bank A
+    const focalWord = cleanTokens[cleanTokens.length - 1];
+    encodeWord(focalWord, 0, 1.0);
+
+    // Preceding tokens excite Bank B with exponential temporal recency decay
+    let recency = 1.0;
+    for (let i = cleanTokens.length - 2; i >= 0; i--) {
+      encodeWord(cleanTokens[i], 1, recency);
+      recency *= 0.7;
+    }
+
+    // Negation particle evokes distinct neuromodulatory pattern across Bank B channels 70..103
+    if (hasNeg) {
+      for (let k = 70; k <= 103; k++) {
+        const ch = (k * 2) + 1;
+        if (ch < this.numPNs) {
+          this.pnActivity[ch] = 0.95;
+        }
+      }
     }
 
     return this.pnActivity;
@@ -455,14 +450,29 @@ export class MushroomBodyConnectome {
         this.compartmentPPL1[compIdx] = 0.0;
       }
 
-      const rate = this.learningRateLTD * scalarReward;
+      // Biologically, PAM dopamine reinforces the winning action by depressing active competitors.
+      // Margin protection: if chosen action is already strongly dominating the top competitor,
+      // synaptic depression is satisfied (Reward Prediction Error delta = R - V = 0).
+      let topCompetitorAct = 0.0;
+      for (let j = 0; j < this.numMBONs; j++) {
+        if (j !== actionIdx && this.mbonActivity[j] > topCompetitorAct) {
+          topCompetitorAct = this.mbonActivity[j];
+        }
+      }
+
+      const margin = (this.mbonActivity[actionIdx] || 0) - topCompetitorAct;
+      const rpe = Math.max(0.1, 1.0 - margin * 10.0);
+      const rate = this.learningRateLTD * scalarReward * rpe;
+
       for (let i = 0; i < this.numKCs; i++) {
         if (this.kcActivity[i] > 0) {
           for (let j = 0; j < this.numMBONs; j++) {
             if (j !== actionIdx) {
               const weightIdx = i * this.numMBONs + j;
               if (this.kcToMbonConnected[weightIdx] === 1) {
-                const deltaW = rate * this.kcActivity[i] * this.kcToMbonWeights[weightIdx];
+                // Scale depression by competitor activity to preserve non-competing synapses
+                const compScale = topCompetitorAct > 0 ? Math.min(1.0, this.mbonActivity[j] / topCompetitorAct) : 1.0;
+                const deltaW = rate * this.kcActivity[i] * compScale * this.kcToMbonWeights[weightIdx];
                 this.kcToMbonWeights[weightIdx] = Math.max(0.05, this.kcToMbonWeights[weightIdx] - deltaW);
                 depressedCount++;
               }
@@ -550,45 +560,57 @@ export class MushroomBodyConnectome {
   }
 
   // Spontaneous Synaptic Turnover / Extinction
-  // In the absence of dopamine reinforcement, weights slowly relax back toward 1.0
+  // In the absence of dopamine reinforcement, weights slowly relax back toward each synapse's original baseline
   decayExtinction(dt = 1.0) {
     const rate = this.recoveryRate * dt;
     for (let k = 0; k < this.kcToMbonWeights.length; k++) {
       if (this.kcToMbonConnected[k] === 1) {
         const w = this.kcToMbonWeights[k];
-        if (w < this.baselineWeight) {
-          this.kcToMbonWeights[k] = Math.min(this.baselineWeight, w + rate);
+        const baseW = this.kcToMbonBaselineWeights[k];
+        if (w < baseW) {
+          this.kcToMbonWeights[k] = Math.min(baseW, w + rate);
+        } else if (w > baseW) {
+          this.kcToMbonWeights[k] = Math.max(baseW, w - rate);
         }
       }
     }
   }
 
   // Synaptic Weight Statistics for UI Telemetry
+  // Evaluates plastic changes strictly relative to each connection's measured biological baseline
   getSynapticWeightStats() {
-    let min = 1.0;
-    let max = 0.0;
+    let min = Infinity;
+    let max = -Infinity;
     let sum = 0;
     let count = 0;
     let depressedCount = 0;
+    let totalDepressionMagnitude = 0;
 
     for (let i = 0; i < this.kcToMbonWeights.length; i++) {
       if (this.kcToMbonConnected[i] === 1) {
         const w = this.kcToMbonWeights[i];
+        const baseW = this.kcToMbonBaselineWeights[i];
         if (w < min) min = w;
         if (w > max) max = w;
         sum += w;
         count++;
-        if (w < 0.9) depressedCount++;
+
+        // Connection is depressed if LTD reduced it by >= 15% below its empirical baseline
+        if (w < baseW * 0.85) {
+          depressedCount++;
+          totalDepressionMagnitude += (baseW - w);
+        }
       }
     }
 
     const mean = count > 0 ? sum / count : 1.0;
     return {
       meanWeight: mean.toFixed(3),
-      minWeight: min.toFixed(3),
-      maxWeight: max.toFixed(3),
+      minWeight: count > 0 ? min.toFixed(3) : '1.000',
+      maxWeight: count > 0 ? max.toFixed(3) : '1.000',
       connectedSynapsesCount: count,
       depressedSynapsesCount: depressedCount,
+      totalDepressionMagnitude: totalDepressionMagnitude.toFixed(3),
       plasticityIndex: count > 0 ? ((depressedCount / count) * 100).toFixed(1) : '0.0',
       lastTrialDepressed: this.lastTrialDepressedCount
     };

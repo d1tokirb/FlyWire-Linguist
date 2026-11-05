@@ -162,6 +162,8 @@ export class CurriculumTutorBot {
     ];
 
     this.totalQuestionsCount = this.curriculum.reduce((acc, l) => acc + l.questions.length, 0);
+    this.masteredQuestions = new Set();
+    this.failedQuestions = new Set();
 
     // Open-Ended Dynamic Follow-Up Templates
     this.openFollowUps = [
@@ -342,10 +344,13 @@ export class CurriculumTutorBot {
     const winningToken = (response.winningMBON || '').toLowerCase();
 
     // Rigorous evaluation: Success requires the fly's chosen neural output to match the target token
-    const isSuccess = winningToken === target || flyWords.includes(target) || responseText.includes(target);
+    const qKey = `mod_${this.currentLessonIdx}_q_${this.currentQuestionIdx}`;
+    const isSuccess = (winningToken === target) || flyWords.includes(target);
 
     if (isSuccess) {
       // SUCCESS: Deliver praise + Sucrose reward (+PAM dopamine LTD)
+      this.masteredQuestions.add(qKey);
+      this.failedQuestions.delete(qKey);
       this.questionAttempts = 0;
       this.engine.rewardSugar(35);
       this.speech.playDopamineChime();
@@ -372,8 +377,10 @@ export class CurriculumTutorBot {
         );
         // Do NOT advance curriculum on error: allow the fly to learn via reinforcement
       } else {
+        this.failedQuestions.add(qKey);
+        this.masteredQuestions.delete(qKey);
         this.addTutorFeedback(
-          `[Demonstration] Imprinted acoustic experience for [<b>${target}</b>] after 3 reinforcement trials. Advancing to next cue...`,
+          `[Cue Unconditioned] Completed 3 reinforcement trials for [<b>${target}</b>] without convergence. Advancing to next cue...`,
           false
         );
         this.questionAttempts = 0;
@@ -403,10 +410,17 @@ export class CurriculumTutorBot {
       this.currentLessonIdx++;
 
       if (this.currentLessonIdx >= this.curriculum.length) {
-        // Completed all 10 structured modules! Transition to Endless Open Dialogue Mode
+        // Completed all structured modules! Transition to Endless Open Dialogue Mode
         this.isInfiniteOpenMode = true;
         this.currentLessonIdx = this.curriculum.length - 1;
-        this.addTutorFeedback('[Graduation] <b>All 10 Modules Mastered!</b> The fly has graduated to <b>Autonomous Open Discourse Mode</b>.', true);
+        const total = this.totalQuestionsCount;
+        const mastered = this.masteredQuestions.size;
+        const pct = ((mastered / total) * 100).toFixed(1);
+        if (mastered === total) {
+          this.addTutorFeedback(`[Graduation] <b>All ${total} Modules Mastered (100%)!</b> The fly has graduated to <b>Autonomous Open Discourse Mode</b>.`, true);
+        } else {
+          this.addTutorFeedback(`[Curriculum Completed] Completed curriculum: <b>${mastered}/${total} Cues Mastered (${pct}%)</b>. ${this.failedQuestions.size} cues unconditioned. Continuing reinforcement in <b>Open Discourse Mode</b>.`, true);
+        }
       } else {
         const nextLesson = this.getCurrentLesson();
         this.addTutorFeedback(`[Next Module] <b>Graduating to ${nextLesson.title}!</b> (${nextLesson.description})`, true);
@@ -500,7 +514,10 @@ export class CurriculumTutorBot {
     }
 
     if (pctLbl) {
-      pctLbl.textContent = this.isInfiniteOpenMode ? '100% Fluent' : `${pct}% Complete`;
+      const mastered = this.masteredQuestions.size;
+      const total = this.totalQuestionsCount;
+      const masteredPct = ((mastered / total) * 100).toFixed(0);
+      pctLbl.textContent = this.isInfiniteOpenMode ? `Mastered ${mastered}/${total} (${masteredPct}%)` : `${pct}% (${mastered} Mastered)`;
     }
 
     if (fill) {
