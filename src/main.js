@@ -176,7 +176,7 @@ export class App {
       btnAudio.addEventListener('click', () => {
         const unmuted = this.speech.toggleMute();
         btnAudio.classList.toggle('active', unmuted);
-        document.getElementById('audio-icon').textContent = unmuted ? '🔊' : '🔇';
+        document.getElementById('audio-icon').textContent = unmuted ? '[ON]' : '[OFF]';
         document.getElementById('audio-label').textContent = unmuted ? 'Audio On' : 'Muted';
       });
     }

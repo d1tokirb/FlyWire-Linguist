@@ -39,7 +39,7 @@ export class TelemetryUI {
         const stats = this.engine.mb.getSynapticWeightStats();
 
         if (resultLog) {
-          resultLog.innerHTML = `<b>⚡ Conditioned Commands:</b> 'go', 'left', 'right', 'stop'.<br/>Depressed KC→MBON Synapses: ${stats.depressedSynapsesCount} (LTD plasticity: ${stats.plasticityIndex}%).`;
+          resultLog.innerHTML = `<b>[Conditioned Commands]:</b> 'go', 'left', 'right', 'stop'.<br/>Depressed KC->MBON Synapses: ${stats.depressedSynapsesCount} (LTD plasticity: ${stats.plasticityIndex}%).`;
         }
         this.updateDashboard();
       });
@@ -49,7 +49,7 @@ export class TelemetryUI {
       btnExtinct.addEventListener('click', () => {
         const stats = this.engine.runExtinctionTrial();
         if (resultLog) {
-          resultLog.innerHTML = `<b>📉 Extinction Trial:</b> Weights decayed toward baseline 1.0.<br/>Remaining depressed synapses: ${stats.depressedSynapsesCount} (mean weight: ${stats.meanWeight}).`;
+          resultLog.innerHTML = `<b>[Extinction Trial]:</b> Weights decayed toward baseline 1.0.<br/>Remaining depressed synapses: ${stats.depressedSynapsesCount} (mean weight: ${stats.meanWeight}).`;
         }
         this.updateDashboard();
       });
@@ -60,7 +60,7 @@ export class TelemetryUI {
         const res1 = this.engine.testGeneralization('go', 'go left');
         const res2 = this.engine.testGeneralization('left', 'stop right');
         if (resultLog) {
-          resultLog.innerHTML = `<b>🔬 Generalization Test:</b><br/>'go' vs 'go left': Cosine Similarity = <b>${res1.cosineSimilarity}</b> (${res1.overlappingKCs} shared KCs)<br/>'left' vs 'stop right': Cosine Similarity = <b>${res2.cosineSimilarity}</b> (${res2.overlappingKCs} shared KCs)`;
+          resultLog.innerHTML = `<b>[Generalization Test]:</b><br/>'go' vs 'go left': Cosine Similarity = <b>${res1.cosineSimilarity}</b> (${res1.overlappingKCs} shared KCs)<br/>'left' vs 'stop right': Cosine Similarity = <b>${res2.cosineSimilarity}</b> (${res2.overlappingKCs} shared KCs)`;
         }
         this.updateDashboard();
       });
@@ -111,7 +111,7 @@ export class TelemetryUI {
     row.className = 'chat-message-row fly-row typing-indicator-row';
     row.id = 'fly-typing-indicator';
     row.innerHTML = `
-      <div class="fly-avatar">🪰</div>
+      <div class="fly-avatar">[Fly]</div>
       <div class="message-bubble fly-bubble typing-bubble">
         <div class="typing-dots">
           <span></span><span></span><span></span>
@@ -140,7 +140,7 @@ export class TelemetryUI {
     const confClass = res.confidence > 70 ? 'conf-high' : res.confidence > 40 ? 'conf-mid' : 'conf-low';
 
     row.innerHTML = `
-      <div class="fly-avatar" title="Drosophila melanogaster (139k neurons)">🪰</div>
+      <div class="fly-avatar" title="Drosophila melanogaster (139k neurons)">[Fly]</div>
       <div class="message-bubble fly-bubble">
         <div class="fly-bubble-meta">
           <span class="fly-meta-circuit">${res.circuit}</span>
@@ -149,13 +149,13 @@ export class TelemetryUI {
         <div class="bubble-text fly-speech-text">${this.escapeHTML(res.text)}</div>
         <div class="fly-bubble-actions">
           <button class="bubble-action-btn btn-speak-msg" title="Replay fly voice audio">
-            🔊 Speak
+            Speak
           </button>
-          <button class="bubble-action-btn btn-reward-msg" title="Praise fly (+25% PAM Dopamine & Hebbian reinforcement)">
-            👍 Sugar Reward
+          <button class="bubble-action-btn btn-reward-msg" title="Praise fly (+25% PAM Dopamine & synaptic reinforcement)">
+            Sugar Reward
           </button>
           <button class="bubble-action-btn btn-correct-msg" title="Teach immediate correction">
-            ✏️ Teach
+            Teach
           </button>
         </div>
         <div class="bubble-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
@@ -182,7 +182,7 @@ export class TelemetryUI {
         this.speech.playDopamineChime();
         if (this.connectome) this.connectome.triggerDopamineSurge();
         rewardBtn.classList.add('rewarded');
-        rewardBtn.textContent = '✨ Rewarded (+PAM)';
+        rewardBtn.textContent = 'Rewarded (+PAM)';
         rewardBtn.disabled = true;
         this.updateDashboard();
       });
@@ -346,8 +346,8 @@ export class TelemetryUI {
     if (this.engine.lexicon.size === 0) {
       container.innerHTML = `
         <div class="empty-lexicon">
-          <span>🦗</span>
-          <span>Tabula Rasa: No words imprinted yet. Type to begin learning.</span>
+          <span>[Tabula Rasa]</span>
+          <span>No words imprinted yet. Type to begin associative conditioning.</span>
         </div>
       `;
       return;

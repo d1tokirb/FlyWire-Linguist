@@ -12,7 +12,6 @@
       <header id="top-bar">
         <div class="brand-section">
           <div class="brand-logo">
-            <span style="font-size: 18px;">🪰</span>
             <span>FlyWire</span>
             <span style="color: var(--text-secondary); font-weight: 400;">LINGUIST</span>
           </div>
@@ -28,22 +27,20 @@
 
         <div class="top-controls">
           <button id="btn-audio" class="apple-pill-btn active" title="Toggle Fly Text-To-Speech & Insectoid Audio">
-            <span id="audio-icon">🔊</span>
-            <span id="audio-label">Audio On</span>
+            <span id="audio-icon">[Audio]</span>
+            <span id="audio-label">On</span>
           </button>
 
-          <button id="btn-sucrose" class="apple-pill-btn btn-sucrose" title="Feed 10% sucrose drop to trigger PAM dopamine reward and Hebbian potentiation">
-            <span>💧</span>
-            <span>Feed Sugar (+PAM)</span>
+          <button id="btn-sucrose" class="apple-pill-btn btn-sucrose" title="Feed 10% sucrose drop to trigger PAM dopamine reward and synaptic plasticity">
+            <span>+PAM</span>
+            <span>Feed Sugar</span>
           </button>
 
           <button id="btn-export-lexicon" class="apple-pill-btn" title="Export learned vocabulary and synaptic weights to JSON">
-            <span>💾</span>
             <span>Export Brain</span>
           </button>
 
           <button id="btn-reset-brain" class="apple-pill-btn btn-danger" title="Wipe learned memory back to Tabula Rasa">
-            <span>🧹</span>
             <span>Reset Brain</span>
           </button>
         </div>
@@ -72,17 +69,16 @@
                 <div class="traffic-light traffic-max"></div>
               </div>
               <div class="chat-title">
-                <span class="chat-title-icon">🪰</span>
                 <span>Drosophila Synaptic Chat</span>
               </div>
-              <span class="chat-live-indicator">● Online Plasticity</span>
+              <span class="chat-live-indicator">Online Plasticity</span>
             </div>
 
             <!-- AUTOMATED CURRICULUM TUTOR BOT CONTROL DOCK -->
             <div class="chat-tutor-banner" id="chat-tutor-bar">
               <div class="tutor-header-row">
                 <div class="tutor-info">
-                  <span class="tutor-avatar">🤖</span>
+                  <span class="tutor-avatar">[Tutor]</span>
                   <span class="tutor-title">Auto-Tutor Bot</span>
                   <span class="tutor-status-badge paused" id="tutor-status-badge">Idle</span>
                 </div>
@@ -98,7 +94,7 @@
                     <option value="7">Mod 8: Complex Discourse</option>
                     <option value="8">Mod 9: Fly Curiosity</option>
                     <option value="9">Mod 10: Deep Reflections</option>
-                    <option value="INFINITE">♾️ Open Endless Chat</option>
+                    <option value="INFINITE">Continuous Training</option>
                   </select>
                   <select id="tutor-speed-select" class="tutor-speed-select" title="Tutor Training Speed">
                     <option value="NORMAL">1x (Real-time)</option>
@@ -106,10 +102,10 @@
                     <option value="TURBO">5x (Turbo)</option>
                   </select>
                   <button type="button" id="btn-toggle-tutor" class="tutor-toggle-btn" title="Toggle autonomous curriculum training">
-                    ▶ Start Auto-Tutor
+                    Start Auto-Tutor
                   </button>
                   <button type="button" id="btn-step-tutor" class="tutor-step-btn" title="Step next question immediately">
-                    ⏭
+                    Step
                   </button>
                 </div>
               </div>
@@ -150,7 +146,7 @@
               />
               <button type="submit" id="btn-chat-send" class="chat-send-btn" title="Send message to fly [Enter]">
                 <span>Teach</span>
-                <span style="font-size: 13px;">↵</span>
+                <span style="font-size: 11px;">[Enter]</span>
               </button>
             </form>
           </div>
@@ -216,7 +212,7 @@
           <section class="apple-card">
             <div class="card-header">
               <span class="card-title">Synaptic Plasticity & Biology</span>
-              <span class="card-badge" style="color: var(--apple-green);">● STDP Active</span>
+              <span class="card-badge" style="color: var(--apple-green);">[Active] STDP</span>
             </div>
 
             <div class="bio-hero">
@@ -302,13 +298,13 @@
               <div class="exp-title">Connectome Plasticity Experiments:</div>
               <div class="exp-btn-row">
                 <button type="button" id="btn-exp-train-commands" class="exp-pill-btn" title="Condition fly on vocabulary: left, right, go, stop">
-                  ⚡ Train: "Go / Left / Right"
+                  Train: "Go / Left / Right"
                 </button>
                 <button type="button" id="btn-exp-extinction" class="exp-pill-btn" title="Run unrewarded extinction trial to test decay">
-                  📉 Extinction Trial
+                  Extinction Trial
                 </button>
                 <button type="button" id="btn-exp-generalize" class="exp-pill-btn" title="Test pattern overlap between 'go left' and 'stop right'">
-                  🔬 Generalization Test
+                  Generalization Test
                 </button>
               </div>
               <div id="exp-result-log" class="exp-result-text">Ready for connectome conditioning experiments.</div>
@@ -323,8 +319,8 @@
             </div>
             <div id="lexicon-cloud" class="lexicon-cloud-area">
               <div class="empty-lexicon">
-                <span>🦗</span>
-                <span>Tabula Rasa: No words imprinted yet.</span>
+                <span>[Tabula Rasa]</span>
+                <span>No words imprinted yet.</span>
               </div>
             </div>
           </section>
@@ -333,7 +329,7 @@
           <section class="apple-card">
             <div class="card-header">
               <span class="card-title">Neural & Formant Oscilloscope</span>
-              <span class="live-tag">● 60 FPS Real-Time</span>
+              <span class="live-tag">60 FPS Real-Time</span>
             </div>
             <div class="oscilloscope-container">
               <canvas id="oscilloscope-canvas" width="340" height="90"></canvas>

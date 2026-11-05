@@ -279,7 +279,7 @@ export class CurriculumTutorBot {
 
       target = 'speak';
       expectedReply = 'I enjoy conversing with you and sharing my thoughts.';
-      tag = '♾️ Open Discourse';
+      tag = '[Open Discourse]';
     } else {
       const lesson = this.getCurrentLesson();
       const item = this.getCurrentQuestion();
@@ -340,14 +340,9 @@ export class CurriculumTutorBot {
     const flyWords = (response.words || []).map(w => w.toLowerCase().replace(/[^a-z]/g, ''));
     const responseText = (response.text || '').toLowerCase();
     const winningToken = (response.winningMBON || '').toLowerCase();
-    const stage = response.stage;
 
-    // In higher stages, meaningful multi-word conversational replies count as success!
-    const isSuccess = stage >= 2 ||
-                      flyWords.includes(target) || 
-                      responseText.includes(target) || 
-                      winningToken === target ||
-                      response.words.length >= 4;
+    // Rigorous evaluation: Success requires the fly's chosen neural output to match the target token
+    const isSuccess = winningToken === target || flyWords.includes(target) || responseText.includes(target);
 
     if (isSuccess) {
       // SUCCESS: Deliver praise + Sucrose reward (+PAM dopamine LTD)
@@ -356,18 +351,18 @@ export class CurriculumTutorBot {
       if (this.connectome3D) this.connectome3D.triggerDopamineSurge();
 
       const praiseMessages = [
-        `✨ Beautifully articulated! Your Kenyon cells synthesized a coherent thought. Awarding sweet sucrose (+PAM Dopamine LTD)!`,
-        `✨ Excellent conversational depth! Awarding sucrose droplet (+PAM dopamine surge).`,
-        `✨ Splendid response! Your connectome is exhibiting genuine conversational awareness.`
+        `[Praise] Correct target matched! Awarding sweet sucrose (+PAM Dopamine LTD).`,
+        `[Praise] Winning MBON matches target! Awarding sucrose droplet (+PAM dopamine surge).`,
+        `[Praise] Associative match confirmed across mushroom body compartments.`
       ];
       this.addTutorFeedback(praiseMessages[Math.floor(Math.random() * praiseMessages.length)], true);
     } else {
-      // EARLY BABBLE: Apply constructive synaptic correction
+      // UNCONDITIONED / INCORRECT: Apply constructive synaptic correction
       this.engine.teachCorrection(item.expectedReply);
       if (this.connectome3D) this.connectome3D.triggerDopamineSurge();
 
       this.addTutorFeedback(
-        `✏️ Target concept: "<b>${item.expectedReply}</b>". Imprinting synaptic pathway into active compartments...`,
+        `[Correction] Target concept: "<b>${item.expectedReply}</b>". Imprinting synaptic pathway into active compartments...`,
         false
       );
     }
@@ -400,10 +395,10 @@ export class CurriculumTutorBot {
         // Completed all 10 structured modules! Transition to Endless Open Dialogue Mode
         this.isInfiniteOpenMode = true;
         this.currentLessonIdx = this.curriculum.length - 1;
-        this.addTutorFeedback('🎓 <b>All 10 Modules Mastered!</b> The fly has graduated to <b>Autonomous Open Discourse Mode</b>.', true);
+        this.addTutorFeedback('[Graduation] <b>All 10 Modules Mastered!</b> The fly has graduated to <b>Autonomous Open Discourse Mode</b>.', true);
       } else {
         const nextLesson = this.getCurrentLesson();
-        this.addTutorFeedback(`📘 <b>Graduating to ${nextLesson.title}!</b> (${nextLesson.description})`, true);
+        this.addTutorFeedback(`[Next Module] <b>Graduating to ${nextLesson.title}!</b> (${nextLesson.description})`, true);
       }
     }
   }
@@ -417,7 +412,7 @@ export class CurriculumTutorBot {
     const row = document.createElement('div');
     row.className = 'chat-message-row tutor-row';
     row.innerHTML = `
-      <div class="tutor-avatar-icon" title="Automated Curriculum Tutor Bot">🤖</div>
+      <div class="tutor-avatar-icon" title="Automated Curriculum Tutor Bot">[Tutor]</div>
       <div class="message-bubble tutor-bubble">
         <div class="tutor-bubble-meta">
           <span class="tutor-meta-badge">Dr. Drosophila (Tutor Bot)</span>
@@ -441,7 +436,7 @@ export class CurriculumTutorBot {
     const row = document.createElement('div');
     row.className = `chat-message-row tutor-row tutor-feedback-row ${isPraise ? 'praise-row' : 'correct-row'}`;
     row.innerHTML = `
-      <div class="tutor-feedback-icon">${isPraise ? '🎓' : '💡'}</div>
+      <div class="tutor-feedback-icon">${isPraise ? '[+]' : '[-]'}</div>
       <div class="message-bubble tutor-feedback-bubble ${isPraise ? 'feedback-praise' : 'feedback-correct'}">
         <div class="bubble-text">${text}</div>
       </div>
@@ -467,10 +462,10 @@ export class CurriculumTutorBot {
 
     if (toggleBtn) {
       if (this.isRunning) {
-        toggleBtn.textContent = '⏸ Pause Tutor';
+        toggleBtn.textContent = 'Pause Tutor';
         toggleBtn.classList.add('tutor-active');
       } else {
-        toggleBtn.textContent = '▶ Start Auto-Tutor';
+        toggleBtn.textContent = 'Start Auto-Tutor';
         toggleBtn.classList.remove('tutor-active');
       }
     }
@@ -487,7 +482,7 @@ export class CurriculumTutorBot {
 
     if (lessonLbl) {
       if (this.isInfiniteOpenMode) {
-        lessonLbl.textContent = '♾️ Autonomous Open Discourse (Never-Ending Conversation)';
+        lessonLbl.textContent = 'Autonomous Open Discourse (Continuous)';
       } else {
         lessonLbl.textContent = `${lesson.title} (Q${this.currentQuestionIdx + 1}/${lesson.questions.length})`;
       }
