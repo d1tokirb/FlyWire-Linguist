@@ -172,9 +172,18 @@ export class CurriculumTutorBot {
   // Speed interval in milliseconds
   getInterval() {
     if (this.speedMode === 'INSTANT') return 0;
+    if (this.speedMode === 'HYPER') return 16;
     if (this.speedMode === 'TURBO') return 25;
-    if (this.speedMode === 'FAST') return 80;
-    return 300; // NORMAL
+    if (this.speedMode === 'FAST') return 70;
+    return 250; // NORMAL
+  }
+
+  // Micro-batch trials executed per cycle for decoupled DOM efficiency
+  getBatchChunkSize() {
+    if (this.speedMode === 'INSTANT') return 25;
+    if (this.speedMode === 'HYPER') return 8;
+    if (this.speedMode === 'TURBO') return 2;
+    return 1;
   }
 
   setSpeed(mode) {
@@ -249,6 +258,14 @@ export class CurriculumTutorBot {
   executeTeacherStep() {
     if (!this.isRunning && arguments.length === 0) return;
     if (this.isWaitingForFly) return;
+
+    // For accelerated modes (TURBO, HYPER, INSTANT), run decoupled micro-batches
+    const chunkSize = this.getBatchChunkSize();
+    if (chunkSize > 1 && this.isRunning) {
+      this.trainBatch(chunkSize);
+      this.scheduleNextStep();
+      return;
+    }
 
     const stage = this.getCurrentStage();
 

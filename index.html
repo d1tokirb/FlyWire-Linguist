@@ -51,10 +51,11 @@
             <button type="button" id="btn-toggle-tutor" class="txt-btn btn-primary">[Start Autonomous Teacher]</button>
             <span>Speed:</span>
             <select id="tutor-speed-select" class="txt-select" title="Autonomous Execution Speed">
-              <option value="INSTANT">Instant (0ms loop)</option>
-              <option value="TURBO" selected>Turbo (15ms)</option>
-              <option value="FAST">Fast (70ms)</option>
-              <option value="NORMAL">Normal (250ms + Audio)</option>
+              <option value="INSTANT">Instant (Chunked ~1,500 trials/sec)</option>
+              <option value="HYPER">Hyper (Micro-batch ~400 trials/sec)</option>
+              <option value="TURBO" selected>Turbo (~100 trials/sec)</option>
+              <option value="FAST">Fast (~15 trials/sec)</option>
+              <option value="NORMAL">Normal (~3 trials/sec + Audio)</option>
             </select>
             <button type="button" id="btn-step-tutor" class="txt-btn">[Step 1 Trial]</button>
             <button type="button" id="btn-train-25x" class="txt-btn">[Train 25x]</button>

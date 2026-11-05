@@ -176,6 +176,10 @@ export class TelemetryUI {
 
   scrollToBottom() {
     if (this.chatThread) {
+      // Keep DOM lean to avoid browser reflow memory overhead
+      while (this.chatThread.children.length > 150) {
+        this.chatThread.removeChild(this.chatThread.firstChild);
+      }
       this.chatThread.scrollTop = this.chatThread.scrollHeight;
     }
   }
