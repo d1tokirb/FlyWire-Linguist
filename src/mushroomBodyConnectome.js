@@ -119,6 +119,7 @@ export class MushroomBodyConnectome {
     this.totalSynapticDepressions = 0;
     this.conditioningTrials = 0;
     this.lastTrialDepressedCount = 0;
+    this.lastChosenMBON = 0;
 
     this.initWiring();
   }
@@ -228,7 +229,7 @@ export class MushroomBodyConnectome {
   }
 
   // Forward Pass: PNs -> KCs (with APL sparse inhibition) -> MBONs
-  forward(tokens) {
+  forward(tokens, temperature = 0.0) {
     // 1. Sensory encoding
     this.encodeTokensToPNs(tokens);
 
@@ -287,119 +288,100 @@ export class MushroomBodyConnectome {
       activity: this.mbonActivity[idx]
     })).sort((a, b) => b.activity - a.activity);
 
+    // Decision selection: greedy (temperature <= 0) or softmax exploration (temperature > 0)
+    let chosenIdx = rankedMBONs[0].idx;
+    if (temperature > 0) {
+      const maxAct = rankedMBONs[0].activity;
+      const exps = this.mbonActivity.map(a => Math.exp((a - maxAct) / temperature));
+      const sumExp = exps.reduce((a, b) => a + b, 0);
+      let r = Math.random() * sumExp;
+      for (let j = 0; j < this.numMBONs; j++) {
+        r -= exps[j];
+        if (r <= 0) {
+          chosenIdx = j;
+          break;
+        }
+      }
+    }
+    this.lastChosenMBON = chosenIdx;
+
     return {
       activeKCCount: this.activeKCCount,
       sparsityPct: ((this.activeKCCount / this.numKCs) * 100).toFixed(1),
       aplInhibition: this.aplActivity.toFixed(2),
       topMBONs: rankedMBONs.slice(0, 5),
       winningToken: rankedMBONs[0].label,
-      winningActivity: rankedMBONs[0].activity
+      winningActivity: rankedMBONs[0].activity,
+      chosenIdx,
+      chosenLabel: this.mbonDefinitions[chosenIdx].label
     };
   }
 
   // ==========================================================================
-  // COMPARTMENT-SPECIFIC PLASTICITY RULE (Dopamine-Gated LTD)
+  // ACTION-GATED REINFORCEMENT LEARNING (Drosophila Mushroom Body LTD)
   // ==========================================================================
-  // In the Drosophila mushroom body:
-  // - PAM dopamine is released LOCALLY in specific compartments (e.g. PAM-gamma5).
-  // - It depresses synapses onto the compartment's specific opposing/aversive MBON
-  //   ONLY for KCs that actually innervate that compartment!
-  // - This updates only ~15 to 25 synapses per trial, completely eliminating the
-  //   catastrophic interference bug (previously 2,300 updates across 24 words).
-  applyPlasticity(targetToken, rewardDopamine = 1.0, punishmentDopamine = 0.0) {
-    const targetIdx = this.mbonLabels.indexOf(targetToken.toLowerCase());
-    if (targetIdx === -1) return null;
+  // The environment provides ONLY scalar reward/punishment R in [-1.0, +1.0].
+  // The network's chosen action is selected BEFORE receiving feedback.
+  // Zero knowledge of external target tokens is passed into this function.
+  // - R > 0 (Reward / Sucrose / PAM Dopamine):
+  //   Depresses synapses from active KCs onto competing MBONs, disinhibiting
+  //   and reinforcing the chosen action.
+  // - R < 0 (Punishment / Error / PPL1 Dopamine):
+  //   Depresses synapses from active KCs onto the erroneous chosen MBON directly,
+  //   forcing exploration away from incorrect behavior.
+  applyReinforcement(scalarReward = 1.0, chosenIdx = null) {
+    const actionIdx = chosenIdx !== null ? chosenIdx : this.lastChosenMBON;
+    if (actionIdx === null || actionIdx < 0 || actionIdx >= this.numMBONs) {
+      return null;
+    }
 
-    const targetMBON = this.mbonDefinitions[targetIdx];
-    const targetComp = targetMBON.compartment;
-    const compIdx = this.compartments.indexOf(targetComp);
+    const chosenMBON = this.mbonDefinitions[actionIdx];
+    const compIdx = this.compartments.indexOf(chosenMBON.compartment);
 
     this.conditioningTrials++;
-    this.danPAM = rewardDopamine;
-    this.danPPL1 = punishmentDopamine;
-
-    if (compIdx !== -1) {
-      this.compartmentPAM[compIdx] = rewardDopamine;
-      this.compartmentPPL1[compIdx] = punishmentDopamine;
-    }
 
     let depressedCount = 0;
 
-    // 1. If REWARD (PAM):
-    // Depress synapses from active KCs onto competing / opposing MBONs within the same lobe system!
-    // - gamma lobe targets: competing MBONs are MBON11 (gamma1) and MBON09 (gamma3)
-    // - alpha/beta lobe targets: competing MBONs are MBON06 (beta1) and MBON14 (alpha3)
-    // - alpha'/beta' lobe targets: competing MBONs are MBON15 (alpha'3) and MBON06
-    if (rewardDopamine > 0) {
-      // Determine the lobe division of the target compartment
-      let targetDivision = 'gamma';
-      if (targetComp.startsWith('alpha_prime') || targetComp.startsWith('beta_prime')) {
-        targetDivision = 'alpha_prime_beta_prime';
-      } else if (targetComp.startsWith('alpha') || targetComp.startsWith('beta')) {
-        targetDivision = 'alpha_beta';
+    if (scalarReward > 0) {
+      // REWARD (PAM): Depress competing MBONs for active KCs
+      this.danPAM = scalarReward;
+      this.danPPL1 = 0.0;
+      if (compIdx !== -1) {
+        this.compartmentPAM[compIdx] = scalarReward;
+        this.compartmentPPL1[compIdx] = 0.0;
       }
 
-      // Find competing MBONs in the same lobe division or same compartment
-      const competingIndices = [];
-      for (let j = 0; j < this.numMBONs; j++) {
-        if (j !== targetIdx) {
-          const compJ = this.mbonDefinitions[j].compartment;
-          let divisionJ = 'gamma';
-          if (compJ.startsWith('alpha_prime') || compJ.startsWith('beta_prime')) {
-            divisionJ = 'alpha_prime_beta_prime';
-          } else if (compJ.startsWith('alpha') || compJ.startsWith('beta')) {
-            divisionJ = 'alpha_beta';
-          }
-
-          // If in the same lobe division and has opposing valence/role (or is a known aversive/competing channel)
-          if (divisionJ === targetDivision) {
-            if (this.mbonDefinitions[j].role.includes('Aversive') || 
-                this.mbonDefinitions[j].role.includes('Halt') ||
-                this.mbonDefinitions[j].role.includes('Veto') ||
-                this.mbonDefinitions[j].compartment === targetComp ||
-                competingIndices.length === 0) {
-              competingIndices.push(j);
-            }
-          }
-        }
-      }
-
-      // If no specific aversive found in division, include first 1-2 alternate MBONs in that division
-      if (competingIndices.length === 0) {
-        for (let j = 0; j < this.numMBONs; j++) {
-          if (j !== targetIdx) {
-            const compJ = this.mbonDefinitions[j].compartment;
-            if (this.kcCompartmentInnervations[0].has(compJ)) {
-              competingIndices.push(j);
-              if (competingIndices.length >= 2) break;
-            }
-          }
-        }
-      }
-
-      // Apply LTD ONLY to KCs innervating this compartment onto the competing MBONs
+      const rate = this.learningRateLTD * scalarReward;
       for (let i = 0; i < this.numKCs; i++) {
-        if (this.kcActivity[i] > 0 && this.kcCompartmentInnervations[i].has(targetComp)) {
-          for (const compMBONIdx of competingIndices) {
-            const weightIdx = i * this.numMBONs + compMBONIdx;
-            if (this.kcToMbonConnected[weightIdx] === 1) {
-              const deltaW = this.learningRateLTD * this.kcActivity[i] * rewardDopamine * this.kcToMbonWeights[weightIdx];
-              this.kcToMbonWeights[weightIdx] = Math.max(0.05, this.kcToMbonWeights[weightIdx] - deltaW);
-              depressedCount++;
+        if (this.kcActivity[i] > 0) {
+          for (let j = 0; j < this.numMBONs; j++) {
+            if (j !== actionIdx) {
+              const weightIdx = i * this.numMBONs + j;
+              if (this.kcToMbonConnected[weightIdx] === 1) {
+                const deltaW = rate * this.kcActivity[i] * this.kcToMbonWeights[weightIdx];
+                this.kcToMbonWeights[weightIdx] = Math.max(0.05, this.kcToMbonWeights[weightIdx] - deltaW);
+                depressedCount++;
+              }
             }
           }
         }
       }
-    }
+    } else if (scalarReward < 0) {
+      // PUNISHMENT / ERROR (PPL1): Depress chosen erroneous MBON directly
+      const punishmentMag = Math.abs(scalarReward);
+      this.danPPL1 = punishmentMag;
+      this.danPAM = 0.0;
+      if (compIdx !== -1) {
+        this.compartmentPPL1[compIdx] = punishmentMag;
+        this.compartmentPAM[compIdx] = 0.0;
+      }
 
-    // 2. If PUNISHMENT / ERROR (PPL1):
-    // Depress synapses from active KCs onto the TARGET MBON directly
-    if (punishmentDopamine > 0) {
+      const rate = this.learningRateLTD * 1.5 * punishmentMag;
       for (let i = 0; i < this.numKCs; i++) {
-        if (this.kcActivity[i] > 0 && this.kcCompartmentInnervations[i].has(targetComp)) {
-          const weightIdx = i * this.numMBONs + targetIdx;
+        if (this.kcActivity[i] > 0) {
+          const weightIdx = i * this.numMBONs + actionIdx;
           if (this.kcToMbonConnected[weightIdx] === 1) {
-            const deltaW = this.learningRateLTD * 1.6 * this.kcActivity[i] * punishmentDopamine * this.kcToMbonWeights[weightIdx];
+            const deltaW = rate * this.kcActivity[i] * this.kcToMbonWeights[weightIdx];
             this.kcToMbonWeights[weightIdx] = Math.max(0.05, this.kcToMbonWeights[weightIdx] - deltaW);
             depressedCount++;
           }
@@ -411,14 +393,25 @@ export class MushroomBodyConnectome {
     this.totalSynapticDepressions += depressedCount;
 
     return {
-      targetToken,
-      targetCompartment: targetComp,
-      mbonId: targetMBON.id,
+      actionIdx,
+      actionLabel: chosenMBON.label,
+      scalarReward,
       depressedSynapsesThisTrial: depressedCount,
       totalDepressedSynapses: this.totalSynapticDepressions,
-      pamLevel: rewardDopamine,
-      ppl1Level: punishmentDopamine
+      pamLevel: this.danPAM,
+      ppl1Level: this.danPPL1
     };
+  }
+
+  // Backward-compatible wrapper that directs to applyReinforcement or supervised targeted LTD
+  applyPlasticity(targetToken, rewardDopamine = 1.0, punishmentDopamine = 0.0) {
+    const targetIdx = this.mbonLabels.indexOf(targetToken.toLowerCase());
+    if (targetIdx === -1) return null;
+    if (rewardDopamine > 0) {
+      return this.applyReinforcement(rewardDopamine, targetIdx);
+    } else {
+      return this.applyReinforcement(-punishmentDopamine, targetIdx);
+    }
   }
 
   // Compute KC Pattern Overlap / Generalization between two phrases

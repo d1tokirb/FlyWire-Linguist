@@ -357,12 +357,13 @@ export class CurriculumTutorBot {
       ];
       this.addTutorFeedback(praiseMessages[Math.floor(Math.random() * praiseMessages.length)], true);
     } else {
-      // UNCONDITIONED / INCORRECT: Apply constructive synaptic correction
+      // UNCONDITIONED / INCORRECT: Apply scalar punishment (-PPL1 aversive shock) to suppress erroneous output
+      this.engine.punishError(25);
       this.engine.teachCorrection(item.expectedReply);
       if (this.connectome3D) this.connectome3D.triggerDopamineSurge();
 
       this.addTutorFeedback(
-        `[Correction] Target concept: "<b>${item.expectedReply}</b>". Imprinting synaptic pathway into active compartments...`,
+        `[Correction] Target concept: "<b>${item.expectedReply}</b>". PPL1 aversive suppression applied; imprinting correction...`,
         false
       );
     }

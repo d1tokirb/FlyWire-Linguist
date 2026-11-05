@@ -249,19 +249,17 @@ export class SynapticLanguageEngine {
   }
 
   // ==========================================================================
-  // REWARD (+PAM Dopamine): True Drosophila KC->MBON LTD Synaptic Plasticity
+  // REWARD (+PAM Dopamine): Scalar Reinforcement of Chosen Action (Drosophila LTD)
   // ==========================================================================
   rewardSugar(bonus = 35.0) {
     this.pamDopamine = Math.min(100, this.pamDopamine + bonus);
     this.ppl1Aversion = Math.max(0, this.ppl1Aversion - 15.0);
 
-    let plasticityReport = null;
-    if (this.lastFlyResponse && this.lastGeneratedWords.length > 0) {
-      // Pick key meaningful tokens from fly response
-      const targetToken = this.lastGeneratedWords.find(w => w.length > 3) || this.lastGeneratedWords[0];
-      plasticityReport = this.mb.applyPlasticity(targetToken, 1.0, 0.0);
+    // Scalar reward (+1.0) applied to the connectome's chosen action (zero target passed)
+    const plasticityReport = this.mb.applyReinforcement(1.0);
 
-      // Increase confidence of words in lexicon
+    // Increase confidence of active tokens in lexicon
+    if (this.lastGeneratedWords && this.lastGeneratedWords.length > 0) {
       for (const w of this.lastGeneratedWords) {
         if (this.lexicon.has(w)) {
           const item = this.lexicon.get(w);
@@ -276,7 +274,27 @@ export class SynapticLanguageEngine {
     return {
       dopamine: this.pamDopamine,
       plasticityReport,
-      message: 'PAM Dopamine Surge! Active KCs depressed competing MBON synapses (Drosophila LTD).'
+      message: 'PAM Dopamine Reward: Depressed competing MBON synapses from active KCs.'
+    };
+  }
+
+  // ==========================================================================
+  // PUNISHMENT (+PPL1 Dopamine): Scalar Aversive Shock to Erroneous Action
+  // ==========================================================================
+  punishError(penalty = 25.0) {
+    this.ppl1Aversion = Math.min(100, this.ppl1Aversion + penalty);
+    this.pamDopamine = Math.max(0, this.pamDopamine - 10.0);
+
+    // Scalar punishment (-1.0) applied directly to suppress the erroneous chosen action
+    const plasticityReport = this.mb.applyReinforcement(-1.0);
+
+    this.saveBrain();
+    if (this.onStateChange) this.onStateChange();
+
+    return {
+      aversion: this.ppl1Aversion,
+      plasticityReport,
+      message: 'PPL1 Aversive Shock: Depressed synapses from active KCs to erroneous MBON.'
     };
   }
 
