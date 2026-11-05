@@ -625,4 +625,67 @@ export class MushroomBodyConnectome {
       lastTrialDepressed: this.lastTrialDepressedCount
     };
   }
+
+  // Get breakdown of active Kenyon cells across anatomical subtypes
+  getKCSubtypeActivity() {
+    let gammaActive = 0, abActive = 0, apbpActive = 0;
+    let gammaTotal = 0, abTotal = 0, apbpTotal = 0;
+
+    for (let i = 0; i < this.numKCs; i++) {
+      const type = this.kcSubtypes[i] || '';
+      const active = this.kcActivity[i] > 0.05;
+      if (type.startsWith('KCab') || type.includes('ab')) {
+        abTotal++;
+        if (active) abActive++;
+      } else if (type.startsWith('KCapbp') || type.includes('apbp')) {
+        apbpTotal++;
+        if (active) apbpActive++;
+      } else {
+        gammaTotal++;
+        if (active) gammaActive++;
+      }
+    }
+    return {
+      gamma: { active: gammaActive, total: gammaTotal },
+      alphaBeta: { active: abActive, total: abTotal },
+      alphaPrimeBetaPrime: { active: apbpActive, total: apbpTotal }
+    };
+  }
+
+  // Get full diagnostics for all 15 compartments
+  getCompartmentMatrix() {
+    const matrix = [];
+    for (const comp of this.compartments) {
+      const mbons = this.mbonDefinitions.filter(m => m.compartment === comp);
+      let compDepressedCount = 0;
+      let compTotalEdges = 0;
+
+      for (const m of mbons) {
+        const mbonIdx = this.mbonDefinitions.findIndex(d => d.id === m.id);
+        if (mbonIdx >= 0) {
+          for (let k = 0; k < this.numKCs; k++) {
+            const idx = k * this.numMBONs + mbonIdx;
+            if (this.kcToMbonConnected[idx] === 1) {
+              compTotalEdges++;
+              if (this.kcToMbonWeights[idx] < this.kcToMbonBaselineWeights[idx] * 0.85) {
+                compDepressedCount++;
+              }
+            }
+          }
+        }
+      }
+
+      matrix.push({
+        compartment: comp,
+        mbons: mbons.map(m => m.id).join(','),
+        labels: mbons.map(m => m.label).join(','),
+        neurotransmitter: mbons.map(m => m.verifiedNT || m.nt).join('/'),
+        function: comp.startsWith('gamma5') || comp.startsWith('beta') ? 'Appetitive / Reward' : 'Aversive / Avoid',
+        depressedEdges: compDepressedCount,
+        totalEdges: compTotalEdges,
+        pct: compTotalEdges > 0 ? ((compDepressedCount / compTotalEdges) * 100).toFixed(1) : '0.0'
+      });
+    }
+    return matrix;
+  }
 }

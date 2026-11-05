@@ -3,155 +3,261 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FlyWire-Linguist : Drosophila Mushroom Body Connectome</title>
+    <title>FlyWire-Linguist : Drosophila Mushroom Body Connectome (FAFB v783)</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="app">
-      <!-- HEADER -->
-      <header id="header">
-        <div class="brand">
-          <h1>FlyWire-Linguist</h1>
-          <span class="sub">Drosophila Connectome Learning (FAFB v783)</span>
-          <span class="badge" id="val-stage-name">Tabula Rasa</span>
+    <!-- TOP HEADER -->
+    <header id="header">
+      <div class="hdr-row">
+        <div class="hdr-title">
+          <span class="txt-bold">FLYWIRE-LINGUIST v1.0</span> // Drosophila Mushroom Body Connectome (FAFB v783)
         </div>
-        <div class="header-actions">
-          <button id="btn-audio" class="btn" title="Toggle insectoid audio output">[Audio: On]</button>
-          <button id="btn-sucrose" class="btn btn-success" title="Feed sucrose (+PAM reward)">+PAM Sugar</button>
-          <button id="btn-aversion" class="btn btn-warning" title="Administer looming error (-PPL1 punishment)">-PPL1 Aversion</button>
-          <button id="btn-export-lexicon" class="btn" title="Export learned brain state as JSON">Export Brain</button>
-          <button id="btn-reset-brain" class="btn btn-danger" title="Reset connectome to Tabula Rasa">Reset Tabula Rasa</button>
+        <div class="hdr-actions">
+          <button type="button" id="btn-audio" class="txt-btn">[Audio: On]</button>
+          <button type="button" id="btn-export-lexicon" class="txt-btn">[Export Brain JSON]</button>
+          <button type="button" id="btn-reset-brain" class="txt-btn btn-danger">[Reset Tabula Rasa]</button>
         </div>
-      </header>
+      </div>
+      <div class="status-bar">
+        <span>STATE: <b id="val-stage-name">Tabula Rasa</b></span>
+        <span class="sep">|</span>
+        <span>PLASTICITY (LTD): <b id="val-fluency-score">0.0%</b></span>
+        <span class="sep">|</span>
+        <span>DEPRESSED SYNAPSES: <b id="val-depressed-synapses">0 / 7,537</b></span>
+        <span class="sep">|</span>
+        <span>ACTIVE KCs: <b id="val-active-kcs">0 / 2,597</b> (<span id="val-kc-sparsity">0.0%</span>)</span>
+        <span class="sep">|</span>
+        <span>APL GABA: <b id="val-apl-inhibition">0.00</b></span>
+        <span class="sep">|</span>
+        <span>PAM: <b id="val-pam-dopamine">35%</b></span>
+        <span class="sep">|</span>
+        <span>PPL1: <b id="val-ppl1-aversion">10%</b></span>
+        <span class="sep">|</span>
+        <span>WINNING MBON: <b id="val-winning-mbon">Resting</b></span>
+      </div>
+    </header>
 
-      <!-- MAIN SPLIT LAYOUT -->
-      <main id="main-content">
-        <!-- LEFT: CHAT & AUTO-TUTOR INTERFACE -->
-        <section id="chat-section">
-          <!-- AUTO-TUTOR PANEL -->
-          <div id="tutor-bar">
-            <div class="tutor-controls-row">
-              <span class="tutor-badge" id="tutor-status-badge">Tutor: Idle</span>
-              <select id="tutor-module-select" class="select-input" title="Curriculum Module">
-                <option value="0">Mod 1: Greetings & Identity</option>
-                <option value="1">Mod 2: Anatomy & Senses</option>
-                <option value="2">Mod 3: Sucrose & Joy</option>
-                <option value="3">Mod 4: Flight & Speed</option>
-                <option value="4">Mod 5: Mood & Dopamine</option>
-                <option value="5">Mod 6: Human Friendship</option>
-                <option value="6">Mod 7: Logic & "Why"</option>
-                <option value="7">Mod 8: Complex Discourse</option>
-                <option value="8">Mod 9: Fly Curiosity</option>
-                <option value="9">Mod 10: Deep Reflections</option>
-                <option value="INFINITE">Continuous Training</option>
-              </select>
-              <select id="tutor-speed-select" class="select-input" title="Training Speed">
-                <option value="NORMAL">1x Speed</option>
-                <option value="FAST">2x Speed</option>
-                <option value="TURBO">5x Turbo</option>
-              </select>
-              <button type="button" id="btn-toggle-tutor" class="btn btn-primary">Start Auto-Tutor</button>
-              <button type="button" id="btn-step-tutor" class="btn">Step</button>
-            </div>
-            <div class="tutor-status-row">
-              <span id="tutor-lesson-label">Lesson 1: Greetings & Identity</span>
-              <span id="tutor-progress-pct">0% Mastered</span>
-            </div>
-            <div class="progress-bar-bg">
-              <div id="tutor-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
-            </div>
+    <div class="divider"></div>
+
+    <!-- MAIN TWO-COLUMN SPLIT -->
+    <main id="main">
+      <!-- LEFT: CONSOLE & HIGH-SPEED TEACHING -->
+      <section id="col-left">
+        <!-- TEACHING & CURRICULUM CONTROLS -->
+        <div class="panel-section">
+          <div class="sec-title">[CURRICULUM AUTO-TUTOR: HIGH-SPEED TEACHING]</div>
+          <div class="ctrl-row">
+            <span>Speed:</span>
+            <select id="tutor-speed-select" class="txt-select" title="Training Execution Speed">
+              <option value="INSTANT">Instant (0ms loop)</option>
+              <option value="TURBO" selected>Turbo (15ms)</option>
+              <option value="FAST">Fast (70ms)</option>
+              <option value="NORMAL">Normal (250ms + Audio)</option>
+            </select>
+            <span>Module:</span>
+            <select id="tutor-module-select" class="txt-select" title="Curriculum Lesson">
+              <option value="0">Mod 1: Greetings & Identity</option>
+              <option value="1">Mod 2: Anatomy & Senses</option>
+              <option value="2">Mod 3: Sucrose & Joy</option>
+              <option value="3">Mod 4: Flight & Speed</option>
+              <option value="4">Mod 5: Mood & Dopamine</option>
+              <option value="5">Mod 6: Human Friendship</option>
+              <option value="6">Mod 7: Logic & "Why"</option>
+              <option value="7">Mod 8: Complex Discourse</option>
+              <option value="8">Mod 9: Fly Curiosity</option>
+              <option value="9">Mod 10: Deep Reflections</option>
+              <option value="INFINITE">Continuous Training</option>
+            </select>
           </div>
-
-          <!-- CHAT MESSAGE LOG -->
-          <div id="chat-thread" class="chat-thread"></div>
-
-          <!-- QUICK PROMPT SUGGESTIONS -->
-          <div class="quick-prompts">
-            <span class="quick-label">Prompt:</span>
-            <button type="button" class="pill-btn" data-phrase="go">go</button>
-            <button type="button" class="pill-btn" data-phrase="stop">stop</button>
-            <button type="button" class="pill-btn" data-phrase="left">left</button>
-            <button type="button" class="pill-btn" data-phrase="right">right</button>
-            <button type="button" class="pill-btn" data-phrase="hello fly">hello fly</button>
-            <button type="button" class="pill-btn" data-phrase="want sugar">want sugar</button>
-            <button type="button" class="pill-btn" data-phrase="good smart fly">good smart fly</button>
+          <div class="ctrl-row" style="margin-top: 4px;">
+            <button type="button" id="btn-toggle-tutor" class="txt-btn btn-primary">[Start Auto-Tutor]</button>
+            <button type="button" id="btn-step-tutor" class="txt-btn">[Step 1]</button>
+            <button type="button" id="btn-train-10x" class="txt-btn">[Train 10x]</button>
+            <button type="button" id="btn-train-50x" class="txt-btn">[Train 50x]</button>
+            <button type="button" id="btn-train-200x" class="txt-btn">[Train 200x]</button>
           </div>
+          <div class="status-row" style="margin-top: 4px;">
+            <span>Status: <b id="tutor-status-badge">Idle</b></span>
+            <span class="sep">|</span>
+            <span>Lesson: <span id="tutor-lesson-label">Lesson 1: Greetings & Identity</span></span>
+            <span class="sep">|</span>
+            <span>Mastery: <b id="tutor-progress-pct">0 / 60 (0.0%)</b></span>
+          </div>
+          <div class="ascii-bar-row">
+            Progress: <span id="tutor-ascii-bar" class="ascii-bar">[----------------------------------------] 0.0%</span>
+          </div>
+        </div>
 
-          <!-- INPUT FORM -->
-          <form id="chat-form" class="chat-form">
-            <input
-              type="text"
-              id="chat-input"
-              class="text-input"
-              placeholder="Send command or token to fly (e.g. 'go left', 'want sugar')..."
-              autocomplete="off"
-            />
-            <button type="submit" id="btn-chat-send" class="btn btn-primary">Send</button>
+        <div class="divider"></div>
+
+        <!-- TERMINAL CONSOLE LOG -->
+        <div class="sec-title-bar">[CONNECTOME ACTIVITY STREAM & DIALOGUE LOG]</div>
+        <div id="chat-thread" class="terminal-log"></div>
+
+        <div class="divider"></div>
+
+        <!-- COMMAND PROMPT & REINFORCEMENT -->
+        <div class="panel-section">
+          <form id="chat-form" class="cmd-row" autocomplete="off">
+            <span class="prompt-sym">&gt;</span>
+            <input type="text" id="chat-input" class="txt-input" placeholder="Type sensory input / command (e.g. 'go left', 'want sugar', 'hello fly')..." autocomplete="off" />
+            <button type="submit" id="btn-chat-send" class="txt-btn btn-primary">[Send Input]</button>
           </form>
-        </section>
-
-        <!-- RIGHT: CONNECTOME & PLASTICITY TELEMETRY -->
-        <aside id="telemetry-section">
-          <!-- CARD 1: PLASTICITY & BIOLOGICAL METRICS -->
-          <div class="panel">
-            <h2>Conditioning & Plasticity</h2>
-            <div class="metric-grid">
-              <div class="metric">
-                <span class="metric-label">Plasticity Index (LTD)</span>
-                <span class="metric-value highlight" id="val-fluency-score">0%</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">Depressed KC Synapses</span>
-                <span class="metric-value highlight" id="val-depressed-synapses">0 / 7,537</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">Active Kenyon Cells</span>
-                <span class="metric-value" id="val-active-kcs">0 / 2,597</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">APL GABA Inhibition</span>
-                <span class="metric-value" id="val-apl-inhibition">0.00 GABA</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">PAM Dopamine</span>
-                <span class="metric-value" id="val-pam-dopamine">35%</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">PPL1 Aversion</span>
-                <span class="metric-value" id="val-ppl1-aversion">10%</span>
-              </div>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Winning MBON:</span>
-              <span class="info-value" id="val-winning-mbon">Resting</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Active Compartment:</span>
-              <span class="info-value" id="val-active-compartment">gamma5</span>
-            </div>
+          <div class="token-row">
+            <span class="sub-label">Cues:</span>
+            <button type="button" class="tok-btn" data-phrase="go">[go]</button>
+            <button type="button" class="tok-btn" data-phrase="stop">[stop]</button>
+            <button type="button" class="tok-btn" data-phrase="left">[left]</button>
+            <button type="button" class="tok-btn" data-phrase="right">[right]</button>
+            <button type="button" class="tok-btn" data-phrase="sugar">[sugar]</button>
+            <button type="button" class="tok-btn" data-phrase="sweet">[sweet]</button>
+            <button type="button" class="tok-btn" data-phrase="hello">[hello]</button>
+            <button type="button" class="tok-btn" data-phrase="human">[human]</button>
+            <button type="button" class="tok-btn" data-phrase="fly">[fly]</button>
+            <button type="button" class="tok-btn" data-phrase="speak">[speak]</button>
+            <button type="button" class="tok-btn" data-phrase="good">[good]</button>
           </div>
-
-          <!-- CARD 2: CONDITIONING EXPERIMENTS -->
-          <div class="panel">
-            <h2>Conditioning Experiments</h2>
-            <div class="button-row">
-              <button type="button" id="btn-exp-train-commands" class="btn btn-sm">Train: Go / Left / Right</button>
-              <button type="button" id="btn-exp-extinction" class="btn btn-sm">Extinction Trial</button>
-              <button type="button" id="btn-exp-generalize" class="btn btn-sm">Generalization Test</button>
-            </div>
-            <div id="exp-result-log" class="log-box">Ready for connectome conditioning experiments.</div>
+          <div class="manual-reward-row">
+            <span class="sub-label">Modulation:</span>
+            <button type="button" id="btn-sucrose" class="txt-btn btn-success">[+PAM Sucrose Reward (+35%)]</button>
+            <button type="button" id="btn-aversion" class="txt-btn btn-warning">[-PPL1 Aversion Shock (+25%)]</button>
           </div>
+        </div>
+      </section>
 
-          <!-- CARD 3: LEARNED LEXICON -->
-          <div class="panel">
-            <h2>Learned Lexicon</h2>
-            <div id="lexicon-cloud" class="lexicon-cloud">
-              <div class="empty-lexicon">Tabula Rasa: No conditioned words yet.</div>
-            </div>
+      <!-- RIGHT: HIGH-DENSITY CONNECTOME TELEMETRY -->
+      <aside id="col-right">
+        <!-- 1. CONNECTOME TOPOLOGY & PROVENANCE -->
+        <div class="panel-section">
+          <div class="sec-title">[1. CONNECTOME TOPOLOGY & PROVENANCE (FAFB v783)]</div>
+          <div class="dense-grid">
+            <div class="cell">Dataset: <b>FlyWire FAFB v783 Proofread</b></div>
+            <div class="cell">Citation: <b>Nature 634:124-152 (2024)</b></div>
+            <div class="cell">Sensory PNs: <b>209 (149 ALPN + 60 Visual)</b></div>
+            <div class="cell">Kenyon Cells: <b>2,597 (Right Hemisphere)</b></div>
+            <div class="cell">MBON Classes: <b>21 Functional Classes</b></div>
+            <div class="cell">Compartments: <b>15 Lobe Compartments</b></div>
+            <div class="cell">PN->KC Synapses: <b>149,041 (10,900 edges)</b></div>
+            <div class="cell">KC->MBON Synapses: <b>70,244 (7,537 edges)</b></div>
+            <div class="cell">Cryptographic Hash: <b>connections.csv.gz (d49dd692...)</b></div>
+            <div class="cell">Cleft Threshold: <b>Buhmann Score &gt;= 50</b></div>
           </div>
-        </aside>
-      </main>
-    </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 2. SYNAPTIC PLASTICITY (LTD) MATRIX -->
+        <div class="panel-section">
+          <div class="sec-title">[2. SYNAPTIC PLASTICITY (LTD) MATRIX]</div>
+          <div class="dense-grid">
+            <div class="cell">Plasticity Index (LTD): <b id="stat-ltd-index" class="c-green">0.0%</b></div>
+            <div class="cell">Depressed KC Synapses: <b id="stat-depressed-count" class="c-green">0 / 7,537</b></div>
+            <div class="cell">Baseline Weight Mean (W0): <b id="stat-baseline-mean">2.704</b></div>
+            <div class="cell">Current Weight Mean (W): <b id="stat-current-mean">2.704</b></div>
+            <div class="cell">Weight Dynamic Range: <b id="stat-weight-range">[0.536, 8.584]</b></div>
+            <div class="cell">Depression Threshold: <b>W &lt; 0.85 * W0</b></div>
+            <div class="cell">Total LTD Magnitude: <b id="stat-total-magnitude">0.000</b></div>
+            <div class="cell">Last Trial LTD Delta: <b id="val-ltd-delta">0 synapses</b></div>
+            <div class="cell">Extinction Decay (lambda): <b>0.005 / dt -&gt; W0</b></div>
+            <div class="cell">Conditioning Trials: <b id="stat-conditioning-trials">0</b></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 3. KENYON CELL DYNAMICS & APL GABA FEEDBACK -->
+        <div class="panel-section">
+          <div class="sec-title">[3. KENYON CELL DYNAMICS & APL GABA INHIBITION]</div>
+          <div class="dense-grid">
+            <div class="cell">Active Kenyon Cells: <b id="val-active-kcs-detail">0 / 2,597</b></div>
+            <div class="cell">Ensemble Sparsity: <b id="val-kc-sparsity-detail">0.0%</b> (Target: ~5.0%)</div>
+            <div class="cell">APL GABA Activity: <b id="val-apl-inhibition-detail">0.00 GABA</b></div>
+            <div class="cell">Feedback Mechanism: <b>Divisive Inhibition</b></div>
+            <div class="cell">Subtype KC_gamma: <b id="val-kc-gamma">0 / 1,270 (0.0%)</b></div>
+            <div class="cell">Subtype KC_alpha/beta: <b id="val-kc-ab">0 / 860 (0.0%)</b></div>
+            <div class="cell">Subtype KC_alpha'/beta': <b id="val-kc-apbp">0 / 467 (0.0%)</b></div>
+            <div class="cell">Membrane Potential: <b>Scaled by Subtype Rin</b></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 4. MOTOR OUTPUT & NEUROMODULATORY VALENCE -->
+        <div class="panel-section">
+          <div class="sec-title">[4. MOTOR OUTPUT & NEUROMODULATORY VALENCE]</div>
+          <div class="dense-grid">
+            <div class="cell">Winning MBON: <b id="val-winning-mbon-detail" class="c-blue">Resting</b></div>
+            <div class="cell">MBON Root ID: <b id="val-winning-root-id">--</b></div>
+            <div class="cell">Active Compartment: <b id="val-active-compartment">gamma5</b></div>
+            <div class="cell">Verified Neurotransmitter: <b id="val-winning-nt">--</b></div>
+            <div class="cell">PAM Dopamine (Sucrose/Reward): <b id="val-pam-level" class="c-green">35%</b></div>
+            <div class="cell">PPL1 Aversion (Looming/Error): <b id="val-ppl1-level" class="c-red">10%</b></div>
+            <div class="cell">Auditory Mechanoreceptor: <b>Johnston's Organ</b></div>
+            <div class="cell">Resonance Frequency: <b>200 Hz Acoustic Bank</b></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 5. 15 MUSHROOM BODY COMPARTMENTS MATRIX -->
+        <div class="panel-section">
+          <div class="sec-title">[5. 15 MUSHROOM BODY COMPARTMENTS MATRIX]</div>
+          <div class="table-wrap">
+            <table class="dense-tbl" id="tbl-compartments">
+              <thead>
+                <tr>
+                  <th>COMP</th>
+                  <th>MBON</th>
+                  <th>LABEL</th>
+                  <th>NT</th>
+                  <th>FUNCTION</th>
+                  <th>LTD EDGES</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-compartments">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 6. EXPERIMENTAL SUITE & STATISTICAL TESTS -->
+        <div class="panel-section">
+          <div class="sec-title">[6. EXPERIMENTAL SUITE & BENCHMARKS]</div>
+          <div class="ctrl-row">
+            <button type="button" id="btn-exp-train-commands" class="txt-btn">[Train: Go/Left/Right/Stop]</button>
+            <button type="button" id="btn-exp-extinction" class="txt-btn">[Extinction Trial]</button>
+            <button type="button" id="btn-exp-generalize" class="txt-btn">[Test Generalization]</button>
+          </div>
+          <div id="exp-result-log" class="mono-box">Ready for connectome conditioning experiments.</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 7. CONDITIONED SYNAPTIC LEXICON -->
+        <div class="panel-section">
+          <div class="sec-title">[7. CONDITIONED SYNAPTIC LEXICON]</div>
+          <div class="table-wrap">
+            <table class="dense-tbl" id="tbl-lexicon">
+              <thead>
+                <tr>
+                  <th>TOKEN</th>
+                  <th>COUNT</th>
+                  <th>CONFIDENCE</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-lexicon">
+                <tr><td colspan="4" class="c-muted">Tabula Rasa: No conditioned vocabulary yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </aside>
+    </main>
 
     <script type="module" src="/src/main.js"></script>
   </body>

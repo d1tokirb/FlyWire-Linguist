@@ -245,9 +245,10 @@ export class CurriculumTutorBot {
   }
 
   getInterval() {
-    if (this.speedMode === 'TURBO') return 550;
-    if (this.speedMode === 'FAST') return 1600;
-    return 3600; // NORMAL: Allows natural speech and listening
+    if (this.speedMode === 'INSTANT') return 0;
+    if (this.speedMode === 'TURBO') return 15;
+    if (this.speedMode === 'FAST') return 70;
+    return 250; // NORMAL
   }
 
   scheduleNextStep(delay = null) {
@@ -275,7 +276,6 @@ export class CurriculumTutorBot {
       const randomFollowUp = this.openFollowUps[Math.floor(Math.random() * this.openFollowUps.length)];
 
       if (lastFly.includes('?')) {
-        // Fly asked a question! Answer it and ask back
         promptText = `That is an insightful question! From our human perspective, we love sweet treats too, but watching you learn is even sweeter. ${randomFollowUp}`;
       } else if (lastFly.toLowerCase().includes('sugar') || lastFly.toLowerCase().includes('sweet')) {
         promptText = `Sucrose truly is magnificent for energy. ${randomFollowUp}`;
@@ -300,31 +300,26 @@ export class CurriculumTutorBot {
     // 1. Post Tutor Question into Chat UI
     this.addTutorMessage(promptText, tag);
 
-    // 2. Trigger Fly listening reactions
     if (this.fly3D) this.fly3D.triggerListeningPulse();
     if (this.ui) this.ui.showTypingIndicator();
 
     this.isWaitingForFly = true;
 
-    // 3. Neural formulation latency based on speed mode
-    const flyLatency = this.speedMode === 'TURBO' ? 140 : (this.speedMode === 'FAST' ? 450 : 850);
+    // 2. High-speed neural execution based on speed mode
+    const isInstant = (this.speedMode === 'INSTANT');
+    const flyLatency = isInstant ? 0 : (this.speedMode === 'TURBO' ? 5 : (this.speedMode === 'FAST' ? 25 : 80));
+    const evalLatency = isInstant ? 0 : (this.speedMode === 'TURBO' ? 5 : (this.speedMode === 'FAST' ? 25 : 80));
 
-    setTimeout(() => {
+    const stepRun = () => {
       if (!this.isRunning) {
         this.isWaitingForFly = false;
         return;
       }
 
-      // Generate fly connectome response
       const response = this.engine.generateResponse(promptText);
+      if (this.ui) this.ui.addFlyMessage(response);
 
-      // Display response in UI
-      if (this.ui) {
-        this.ui.addFlyMessage(response);
-      }
-
-      // Speak fly audio if in NORMAL or FAST mode
-      if (this.speedMode !== 'TURBO') {
+      if (this.speech && this.speedMode === 'NORMAL') {
         if (this.fly3D) this.fly3D.setSpeechState(true);
         this.speech.speak(
           response.text,
@@ -334,12 +329,74 @@ export class CurriculumTutorBot {
         );
       }
 
-      // 4. Tutor evaluates the fly's answer
-      setTimeout(() => {
+      if (evalLatency === 0) {
         this.evaluateFlyResponse({ target, expectedReply }, response);
-      }, this.speedMode === 'TURBO' ? 180 : 900);
+      } else {
+        setTimeout(() => {
+          this.evaluateFlyResponse({ target, expectedReply }, response);
+        }, evalLatency);
+      }
+    };
 
-    }, flyLatency);
+    if (flyLatency === 0) {
+      stepRun();
+    } else {
+      setTimeout(stepRun, flyLatency);
+    }
+  }
+
+  // Fast batch conditioning across curriculum in a tight loop
+  trainBatch(trialsCount = 25) {
+    let completed = 0;
+    const masteredBefore = this.masteredQuestions.size;
+
+    for (let t = 0; t < trialsCount; t++) {
+      completed++;
+      const lesson = this.getCurrentLesson();
+      const item = this.getCurrentQuestion();
+      const target = item.target.toLowerCase();
+      const response = this.engine.generateResponse(item.prompt);
+      const winningToken = (response.winningMBON || '').toLowerCase();
+      const flyWords = (response.words || []).map(w => w.toLowerCase().replace(/[^a-z]/g, ''));
+      const qKey = `mod_${this.currentLessonIdx}_q_${this.currentQuestionIdx}`;
+      const isSuccess = (winningToken === target) || flyWords.includes(target);
+
+      if (isSuccess) {
+        this.masteredQuestions.add(qKey);
+        this.failedQuestions.delete(qKey);
+        this.questionAttempts = 0;
+        this.engine.rewardSugar(35);
+        if (!this.isInfiniteOpenMode) this.advanceCurriculum();
+      } else {
+        this.questionAttempts = (this.questionAttempts || 0) + 1;
+        this.engine.punishError(25);
+        if (this.questionAttempts >= 3) {
+          this.failedQuestions.add(qKey);
+          this.masteredQuestions.delete(qKey);
+          this.questionAttempts = 0;
+          if (!this.isInfiniteOpenMode) this.advanceCurriculum();
+        }
+      }
+    }
+
+    const newlyMastered = this.masteredQuestions.size - masteredBefore;
+    const stats = this.engine.mb.getSynapticWeightStats();
+    const totalMastered = this.masteredQuestions.size;
+    const totalQuestions = this.totalQuestionsCount;
+    const pct = ((totalMastered / totalQuestions) * 100).toFixed(1);
+
+    const logMsg = `[FAST BATCH] Executed ${completed} trials. Mastered: ${totalMastered}/${totalQuestions} (${pct}%). Depressed KC Synapses: ${stats.depressedSynapsesCount} (${stats.plasticityIndex}%).`;
+    if (this.ui) {
+      this.ui.addSystemLog(logMsg);
+      this.ui.updateDashboard();
+    }
+    this.updateUIStatus();
+    return { completed, totalMastered, newlyMastered };
+  }
+
+  // Rapidly master all modules
+  masterAll() {
+    return this.trainBatch(200);
   }
 
   // Evaluate response, administer dopamine or constructive correction
@@ -436,45 +493,16 @@ export class CurriculumTutorBot {
 
   // Display tutor prompt in chat
   addTutorMessage(text, tag) {
-    if (typeof document === 'undefined') return;
-    const thread = document.getElementById('chat-thread');
-    if (!thread) return;
-
-    const row = document.createElement('div');
-    row.className = 'chat-message-row tutor-row';
-    row.innerHTML = `
-      <div class="tutor-avatar-icon" title="Automated Curriculum Tutor Bot">[Tutor]</div>
-      <div class="message-bubble tutor-bubble">
-        <div class="tutor-bubble-meta">
-          <span class="tutor-meta-badge">Dr. Drosophila (Tutor Bot)</span>
-          <span class="tutor-lesson-tag">${tag}</span>
-        </div>
-        <div class="bubble-text tutor-speech-text">${text}</div>
-        <div class="bubble-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-      </div>
-    `;
-
-    thread.appendChild(row);
-    if (this.ui) this.ui.scrollToBottom();
+    if (this.ui) {
+      this.ui.addTutorMessage(text, tag);
+    }
   }
 
   // Display tutor feedback banner in chat
-  addTutorFeedback(text, isPraise) {
-    if (typeof document === 'undefined') return;
-    const thread = document.getElementById('chat-thread');
-    if (!thread) return;
-
-    const row = document.createElement('div');
-    row.className = `chat-message-row tutor-row tutor-feedback-row ${isPraise ? 'praise-row' : 'correct-row'}`;
-    row.innerHTML = `
-      <div class="tutor-feedback-icon">${isPraise ? '[+]' : '[-]'}</div>
-      <div class="message-bubble tutor-feedback-bubble ${isPraise ? 'feedback-praise' : 'feedback-correct'}">
-        <div class="bubble-text">${text}</div>
-      </div>
-    `;
-
-    thread.appendChild(row);
-    if (this.ui) this.ui.scrollToBottom();
+  addTutorFeedback(text, isPraise = true) {
+    if (this.ui) {
+      this.ui.addTutorFeedback(text, isPraise);
+    }
   }
 
   // Update UI bar elements
@@ -487,43 +515,46 @@ export class CurriculumTutorBot {
     const pctLbl = document.getElementById('tutor-progress-pct');
     const fill = document.getElementById('tutor-progress-fill');
     const moduleSelect = document.getElementById('tutor-module-select');
+    const asciiBar = document.getElementById('tutor-ascii-bar');
 
     const pct = this.getProgressPercentage();
     const lesson = this.getCurrentLesson();
+    const mastered = this.masteredQuestions.size;
+    const total = this.totalQuestionsCount;
+    const pctVal = total > 0 ? (mastered / total) * 100 : 0;
 
     if (toggleBtn) {
       if (this.isRunning) {
-        toggleBtn.textContent = 'Pause Tutor';
-        toggleBtn.classList.add('tutor-active');
+        toggleBtn.textContent = '[Pause Tutor]';
       } else {
-        toggleBtn.textContent = 'Start Auto-Tutor';
-        toggleBtn.classList.remove('tutor-active');
+        toggleBtn.textContent = '[Start Auto-Tutor]';
       }
     }
 
     if (badge) {
       if (this.isRunning) {
         badge.textContent = this.isInfiniteOpenMode ? `Open Chat (${this.speedMode})` : `Training (${this.speedMode})`;
-        badge.className = 'tutor-status-badge running';
       } else {
-        badge.textContent = 'Paused';
-        badge.className = 'tutor-status-badge paused';
+        badge.textContent = 'Idle';
       }
     }
 
     if (lessonLbl) {
       if (this.isInfiniteOpenMode) {
-        lessonLbl.textContent = 'Autonomous Open Discourse (Continuous)';
+        lessonLbl.textContent = 'Open Discourse (Continuous)';
       } else {
         lessonLbl.textContent = `${lesson.title} (Q${this.currentQuestionIdx + 1}/${lesson.questions.length})`;
       }
     }
 
     if (pctLbl) {
-      const mastered = this.masteredQuestions.size;
-      const total = this.totalQuestionsCount;
-      const masteredPct = ((mastered / total) * 100).toFixed(0);
-      pctLbl.textContent = this.isInfiniteOpenMode ? `Mastered ${mastered}/${total} (${masteredPct}%)` : `${pct}% (${mastered} Mastered)`;
+      pctLbl.textContent = `${mastered} / ${total} (${pctVal.toFixed(1)}%)`;
+    }
+
+    if (asciiBar) {
+      const filled = Math.min(40, Math.max(0, Math.round((pctVal / 100) * 40)));
+      const empty = 40 - filled;
+      asciiBar.textContent = `[${'='.repeat(filled)}${'-'.repeat(empty)}] ${pctVal.toFixed(1)}%`;
     }
 
     if (fill) {

@@ -13,6 +13,7 @@ export class App {
     this.speech = new DrosophilaSpeechSynth();
     this.ui = new TelemetryUI(this.engine, this.speech);
     this.tutor = new CurriculumTutorBot(this.engine, this.speech, this.ui);
+    this.tutor.setSpeed('TURBO');
 
     this.engine.onStateChange = () => {
       this.ui.updateDashboard();
@@ -32,15 +33,14 @@ export class App {
       chatInput.value = '';
 
       this.ui.addUserMessage(prompt);
-      this.ui.showTypingIndicator();
 
-      const latency = 200 + Math.random() * 300;
-      setTimeout(() => {
-        const response = this.engine.generateResponse(prompt);
-        this.ui.addFlyMessage(response);
+      // Instant neural evaluation across connectome
+      const response = this.engine.generateResponse(prompt);
+      this.ui.addFlyMessage(response);
+      if (this.speech && !this.speech.isMuted) {
         this.speech.speak(response.text, response.stage);
-        this.ui.updateDashboard();
-      }, latency);
+      }
+      this.ui.updateDashboard();
     };
 
     if (chatForm) {
@@ -50,7 +50,7 @@ export class App {
       });
     }
 
-    document.querySelectorAll('.pill-btn').forEach(btn => {
+    document.querySelectorAll('.tok-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         handleSendMessage(btn.dataset.phrase);
       });
@@ -137,6 +137,28 @@ export class App {
     if (btnStepTutor) {
       btnStepTutor.addEventListener('click', () => {
         this.tutor.executeTutorStep();
+      });
+    }
+
+    // High-speed batch training buttons
+    const btnTrain10x = document.getElementById('btn-train-10x');
+    if (btnTrain10x) {
+      btnTrain10x.addEventListener('click', () => {
+        this.tutor.trainBatch(10);
+      });
+    }
+
+    const btnTrain50x = document.getElementById('btn-train-50x');
+    if (btnTrain50x) {
+      btnTrain50x.addEventListener('click', () => {
+        this.tutor.trainBatch(50);
+      });
+    }
+
+    const btnTrain200x = document.getElementById('btn-train-200x');
+    if (btnTrain200x) {
+      btnTrain200x.addEventListener('click', () => {
+        this.tutor.trainBatch(200);
       });
     }
   }

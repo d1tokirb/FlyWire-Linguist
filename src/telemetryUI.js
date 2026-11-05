@@ -1,6 +1,6 @@
-// Telemetry & Minimalist Chat Coordinator
-// Manages the chat thread, action-gated conditioning experiments,
-// and real-time biological connectome telemetry dashboard.
+// High-Density Telemetry Coordinator & Terminal Console
+// Orchestrates the terminal event stream, dense connectome telemetry tables,
+// and action-gated conditioning experiments.
 
 export class TelemetryUI {
   constructor(languageEngine, speechSynth) {
@@ -10,6 +10,21 @@ export class TelemetryUI {
     this.chatThread = document.getElementById('chat-thread');
     this.initDefaultChat();
     this.initExperiments();
+  }
+
+  initDefaultChat() {
+    if (!this.chatThread) return;
+    this.chatThread.innerHTML = `
+      <div class="log-entry">
+        <span class="log-time">${this.getTimeStr()}</span>
+        <span class="log-speaker system">[SYSTEM]</span>
+        <span class="log-msg">FlyWire-Linguist initialized in Tabula Rasa state (0 words, 0 depressed synapses relative to FAFB v783 baseline). Type inputs or engage Auto-Tutor.</span>
+      </div>
+    `;
+  }
+
+  getTimeStr() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
   initExperiments() {
@@ -39,8 +54,9 @@ export class TelemetryUI {
         const stats = this.engine.mb.getSynapticWeightStats();
 
         if (resultLog) {
-          resultLog.textContent = `[Action-Gated RL] 'go', 'left', 'right', 'stop'\nTrials: ${totalTrials} (Correct: ${correctTrials}/${totalTrials})\nDepressed KC->MBON Synapses: ${stats.depressedSynapsesCount} (LTD: ${stats.plasticityIndex}%)`;
+          resultLog.textContent = `[Action-Gated RL] 'go', 'left', 'right', 'stop'\nReinforcement Trials: ${totalTrials} (Correct: ${correctTrials}/${totalTrials})\nDepressed KC->MBON Synapses: ${stats.depressedSynapsesCount} (LTD: ${stats.plasticityIndex}%)`;
         }
+        this.addSystemLog(`[EXPERIMENT] Conditioned commands: 'go', 'left', 'right', 'stop'. Trials: ${totalTrials}, Correct: ${correctTrials}. Depressed Synapses: ${stats.depressedSynapsesCount}`);
         this.updateDashboard();
       });
     }
@@ -49,8 +65,9 @@ export class TelemetryUI {
       btnExtinct.addEventListener('click', () => {
         const stats = this.engine.runExtinctionTrial();
         if (resultLog) {
-          resultLog.textContent = `[Extinction Trial] Synapses decayed toward empirical baselines.\nRemaining depressed synapses: ${stats.depressedSynapsesCount} (Mean weight: ${stats.meanWeight})`;
+          resultLog.textContent = `[Extinction Trial] Decayed weights toward individual empirical baselines W0.\nDepressed Synapses: ${stats.depressedSynapsesCount} (Mean weight: ${stats.meanWeight})`;
         }
+        this.addSystemLog(`[EXTINCTION] Spontaneous recovery toward baseline W0. Depressed Synapses: ${stats.depressedSynapsesCount}`);
         this.updateDashboard();
       });
     }
@@ -62,30 +79,22 @@ export class TelemetryUI {
         if (resultLog) {
           resultLog.textContent = `[Generalization Test]\n'go' vs 'go left': Cosine Sim = ${res1.cosineSimilarity} (${res1.overlappingKCs} shared KCs)\n'left' vs 'stop right': Cosine Sim = ${res2.cosineSimilarity} (${res2.overlappingKCs} shared KCs)`;
         }
+        this.addSystemLog(`[GENERALIZATION] 'go' vs 'go left': Cosine Sim = ${res1.cosineSimilarity} (${res1.overlappingKCs} shared KCs)`);
         this.updateDashboard();
       });
     }
   }
 
-  initDefaultChat() {
-    if (!this.chatThread) return;
-    this.chatThread.innerHTML = `
-      <div class="chat-system-notice">
-        <b>Tabula Rasa Activated:</b> The fly begins with zero English comprehension.
-        Send command tokens (e.g. "go", "left", "sugar") or activate Auto-Tutor to begin synaptic conditioning.
-      </div>
-    `;
-  }
-
   addUserMessage(text) {
     if (!this.chatThread) return;
-    const msg = document.createElement('div');
-    msg.className = 'chat-message chat-user';
-    msg.innerHTML = `
-      <div class="bubble-meta">Human</div>
-      <div class="bubble">${this.escapeHTML(text)}</div>
+    const entry = document.createElement('div');
+    entry.className = 'log-entry user-entry';
+    entry.innerHTML = `
+      <span class="log-time">${this.getTimeStr()}</span>
+      <span class="log-speaker human">[USER]</span>
+      <span class="log-msg">"${this.escapeHTML(text)}"</span>
     `;
-    this.chatThread.appendChild(msg);
+    this.chatThread.appendChild(entry);
     this.scrollToBottom();
   }
 
@@ -94,8 +103,12 @@ export class TelemetryUI {
     if (!this.chatThread) return;
     const typing = document.createElement('div');
     typing.id = 'fly-typing-indicator';
-    typing.className = 'chat-message chat-fly';
-    typing.innerHTML = `<div class="bubble" style="color: var(--text-muted); font-style: italic;">Transducing Johnston organ...</div>`;
+    typing.className = 'log-entry';
+    typing.innerHTML = `
+      <span class="log-time">${this.getTimeStr()}</span>
+      <span class="log-speaker fly">[FLY]</span>
+      <span class="log-msg c-muted">Transducing 200 Hz Johnston organ acoustic signal...</span>
+    `;
     this.chatThread.appendChild(typing);
     this.scrollToBottom();
   }
@@ -109,74 +122,55 @@ export class TelemetryUI {
     this.removeTypingIndicator();
     if (!this.chatThread) return;
 
-    const msg = document.createElement('div');
-    msg.className = 'chat-message chat-fly';
-    msg.innerHTML = `
-      <div class="bubble-meta">
-        <span>Fly (${res.circuit})</span>
-        <span>${res.confidence}% Conf</span>
-      </div>
-      <div class="bubble">${this.escapeHTML(res.text)}</div>
-      <div class="bubble-actions">
-        <button type="button" class="bubble-btn btn-speak">Speak</button>
-        <button type="button" class="bubble-btn btn-reward">+Sugar (+PAM)</button>
-        <button type="button" class="bubble-btn btn-teach">Teach</button>
-      </div>
+    const entry = document.createElement('div');
+    entry.className = 'log-entry fly-entry';
+    const mbonInfo = res.winningMBON ? ` | MBON: ${res.winningMBON}` : '';
+    entry.innerHTML = `
+      <span class="log-time">${this.getTimeStr()}</span>
+      <span class="log-speaker fly">[FLY]</span>
+      <span class="log-msg"><b>"${this.escapeHTML(res.text)}"</b> (${res.circuit}${mbonInfo}, Conf: ${res.confidence}%, KCs: ${res.kcActive || 0}/2,597)</span>
     `;
-
-    const btnSpeak = msg.querySelector('.btn-speak');
-    if (btnSpeak) {
-      btnSpeak.addEventListener('click', () => {
-        if (this.speech) this.speech.speak(res.text, res.stage);
-      });
-    }
-
-    const btnReward = msg.querySelector('.btn-reward');
-    if (btnReward) {
-      btnReward.addEventListener('click', () => {
-        this.engine.rewardSugar(30);
-        if (this.speech) this.speech.playDopamineChime();
-        btnReward.textContent = 'Rewarded';
-        btnReward.disabled = true;
-        this.updateDashboard();
-      });
-    }
-
-    const btnTeach = msg.querySelector('.btn-teach');
-    if (btnTeach) {
-      btnTeach.addEventListener('click', () => {
-        const target = prompt(`Teach the fly the expected output for "${this.engine.lastUserPrompt}":`, res.text);
-        if (target && target.trim()) {
-          this.engine.teachCorrection(target.trim());
-          this.updateDashboard();
-        }
-      });
-    }
-
-    this.chatThread.appendChild(msg);
+    this.chatThread.appendChild(entry);
     this.scrollToBottom();
   }
 
   addTutorMessage(text, tag) {
     if (!this.chatThread) return;
-    const msg = document.createElement('div');
-    msg.className = 'chat-message chat-tutor';
-    msg.innerHTML = `
-      <div class="bubble-meta">
-        <b>Auto-Tutor</b> &bull; ${this.escapeHTML(tag)}
-      </div>
-      <div>${this.escapeHTML(text)}</div>
+    const entry = document.createElement('div');
+    entry.className = 'log-entry tutor-entry';
+    entry.innerHTML = `
+      <span class="log-time">${this.getTimeStr()}</span>
+      <span class="log-speaker tutor">[TUTOR]</span>
+      <span class="log-msg"><b class="c-blue">${this.escapeHTML(tag)}:</b> ${this.escapeHTML(text)}</span>
     `;
-    this.chatThread.appendChild(msg);
+    this.chatThread.appendChild(entry);
     this.scrollToBottom();
   }
 
-  addTutorFeedback(feedbackText) {
+  addTutorFeedback(feedbackText, isPraise = true) {
     if (!this.chatThread) return;
-    const msg = document.createElement('div');
-    msg.className = 'chat-system-notice';
-    msg.innerHTML = feedbackText;
-    this.chatThread.appendChild(msg);
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${isPraise ? 'reward-entry' : 'punish-entry'}`;
+    const cleanText = feedbackText.replace(/<[^>]*>?/gm, '');
+    entry.innerHTML = `
+      <span class="log-time">${this.getTimeStr()}</span>
+      <span class="log-speaker system">[FEEDBACK]</span>
+      <span class="log-msg">${cleanText}</span>
+    `;
+    this.chatThread.appendChild(entry);
+    this.scrollToBottom();
+  }
+
+  addSystemLog(text) {
+    if (!this.chatThread) return;
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `
+      <span class="log-time">${this.getTimeStr()}</span>
+      <span class="log-speaker system">[SYSTEM]</span>
+      <span class="log-msg">${this.escapeHTML(text)}</span>
+    `;
+    this.chatThread.appendChild(entry);
     this.scrollToBottom();
   }
 
@@ -191,10 +185,12 @@ export class TelemetryUI {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // Update complete high-density telemetry dashboard
   updateDashboard() {
     const stage = this.engine.getFluencyStage();
     const score = this.engine.getFluencyScore();
 
+    // Top Header Status Summary
     const stageEl = document.getElementById('val-stage-name');
     if (stageEl) {
       stageEl.textContent = stage.name;
@@ -212,61 +208,159 @@ export class TelemetryUI {
 
     if (this.engine.mb) {
       const stats = this.engine.mb.getSynapticWeightStats();
+      const kcSubtypes = this.engine.mb.getKCSubtypeActivity();
 
+      // Depressed KC Synapses
       const depressedEl = document.getElementById('val-depressed-synapses');
       if (depressedEl) {
-        depressedEl.textContent = `${stats.depressedSynapsesCount} / ${stats.connectedSynapsesCount} (${stats.plasticityIndex}%)`;
+        depressedEl.textContent = `${stats.depressedSynapsesCount} / ${stats.connectedSynapsesCount}`;
       }
 
+      // Active KCs & Sparsity
       const activeKCsEl = document.getElementById('val-active-kcs');
-      if (activeKCsEl) {
-        activeKCsEl.textContent = `${this.engine.lastActiveKCCount || 0} / 2,597`;
-      }
+      if (activeKCsEl) activeKCsEl.textContent = `${this.engine.lastActiveKCCount || 0} / 2,597`;
 
+      const kcSparsityEl = document.getElementById('val-kc-sparsity');
+      if (kcSparsityEl) kcSparsityEl.textContent = `${this.engine.lastKCSparsity || 5.0}%`;
+
+      // APL GABA
       const aplEl = document.getElementById('val-apl-inhibition');
-      if (aplEl) {
-        aplEl.textContent = `${this.engine.mb.aplActivity.toFixed(2)} GABA`;
+      if (aplEl) aplEl.textContent = this.engine.mb.aplActivity.toFixed(2);
+
+      // Section 2: Plasticity Matrix
+      const statIndex = document.getElementById('stat-ltd-index');
+      if (statIndex) statIndex.textContent = `${stats.plasticityIndex}%`;
+
+      const statDep = document.getElementById('stat-depressed-count');
+      if (statDep) statDep.textContent = `${stats.depressedSynapsesCount} / ${stats.connectedSynapsesCount}`;
+
+      const statBase = document.getElementById('stat-baseline-mean');
+      if (statBase) statBase.textContent = '2.704';
+
+      const statCur = document.getElementById('stat-current-mean');
+      if (statCur) statCur.textContent = stats.meanWeight;
+
+      const statRange = document.getElementById('stat-weight-range');
+      if (statRange) statRange.textContent = `[${stats.minWeight}, ${stats.maxWeight}]`;
+
+      const statMag = document.getElementById('stat-total-magnitude');
+      if (statMag) statMag.textContent = stats.totalDepressionMagnitude;
+
+      const ltdDeltaEl = document.getElementById('val-ltd-delta');
+      if (ltdDeltaEl) ltdDeltaEl.textContent = `${stats.lastTrialDepressed} synapses`;
+
+      const condTrials = document.getElementById('stat-conditioning-trials');
+      if (condTrials) condTrials.textContent = `${this.engine.mb.conditioningTrials}`;
+
+      // Section 3: Kenyon Cell Dynamics
+      const activeDetail = document.getElementById('val-active-kcs-detail');
+      if (activeDetail) activeDetail.textContent = `${this.engine.lastActiveKCCount || 0} / 2,597`;
+
+      const sparsityDetail = document.getElementById('val-kc-sparsity-detail');
+      if (sparsityDetail) sparsityDetail.textContent = `${this.engine.lastKCSparsity || 5.0}%`;
+
+      const aplDetail = document.getElementById('val-apl-inhibition-detail');
+      if (aplDetail) aplDetail.textContent = `${this.engine.mb.aplActivity.toFixed(2)} GABA`;
+
+      if (kcSubtypes) {
+        const gammaEl = document.getElementById('val-kc-gamma');
+        if (gammaEl) {
+          const gPct = ((kcSubtypes.gamma.active / kcSubtypes.gamma.total) * 100).toFixed(1);
+          gammaEl.textContent = `${kcSubtypes.gamma.active} / ${kcSubtypes.gamma.total} (${gPct}%)`;
+        }
+
+        const abEl = document.getElementById('val-kc-ab');
+        if (abEl) {
+          const abPct = ((kcSubtypes.alphaBeta.active / kcSubtypes.alphaBeta.total) * 100).toFixed(1);
+          abEl.textContent = `${kcSubtypes.alphaBeta.active} / ${kcSubtypes.alphaBeta.total} (${abPct}%)`;
+        }
+
+        const apbpEl = document.getElementById('val-kc-apbp');
+        if (apbpEl) {
+          const apbpPct = ((kcSubtypes.alphaPrimeBetaPrime.active / kcSubtypes.alphaPrimeBetaPrime.total) * 100).toFixed(1);
+          apbpEl.textContent = `${kcSubtypes.alphaPrimeBetaPrime.active} / ${kcSubtypes.alphaPrimeBetaPrime.total} (${apbpPct}%)`;
+        }
       }
 
-      const winningMbonEl = document.getElementById('val-winning-mbon');
-      if (winningMbonEl) {
-        winningMbonEl.textContent = this.engine.lastWinningMBON ? `${this.engine.lastWinningMBON.label} (${this.engine.lastWinningMBON.id})` : 'Resting';
+      // Section 4: Motor Output
+      const winningMBON = this.engine.lastWinningMBON;
+      const winningEl = document.getElementById('val-winning-mbon');
+      const winningDetail = document.getElementById('val-winning-mbon-detail');
+      const rootIdEl = document.getElementById('val-winning-root-id');
+      const activeComp = document.getElementById('val-active-compartment');
+      const winningNT = document.getElementById('val-winning-nt');
+      const pamLvl = document.getElementById('val-pam-level');
+      const ppl1Lvl = document.getElementById('val-ppl1-level');
+
+      if (winningMBON) {
+        if (winningEl) winningEl.textContent = `${winningMBON.label} (${winningMBON.id})`;
+        if (winningDetail) winningDetail.textContent = `${winningMBON.label} (${winningMBON.id})`;
+        if (rootIdEl) rootIdEl.textContent = winningMBON.flywireRootId || '--';
+        if (activeComp) activeComp.textContent = winningMBON.compartment || 'gamma5';
+        if (winningNT) winningNT.textContent = winningMBON.verifiedNT || winningMBON.nt || 'Glu';
+      } else {
+        if (winningEl) winningEl.textContent = 'Resting';
+        if (winningDetail) winningDetail.textContent = 'Resting';
+        if (rootIdEl) rootIdEl.textContent = '--';
+        if (activeComp) activeComp.textContent = 'gamma5';
+        if (winningNT) winningNT.textContent = '--';
       }
 
-      const compEl = document.getElementById('val-active-compartment');
-      if (compEl) {
-        compEl.textContent = this.engine.lastWinningMBON ? this.engine.lastWinningMBON.compartment : 'gamma5';
-      }
+      if (pamLvl) pamLvl.textContent = `${Math.round(this.engine.pamDopamine)}%`;
+      if (ppl1Lvl) ppl1Lvl.textContent = `${Math.round(this.engine.ppl1Aversion)}%`;
+
+      // Section 5: 15 Compartments Table
+      this.renderCompartmentTable();
     }
 
-    this.renderLexiconCloud();
+    // Section 7: Learned Lexicon Table
+    this.renderLexiconTable();
   }
 
-  renderLexiconCloud() {
-    const container = document.getElementById('lexicon-cloud');
-    if (!container) return;
+  renderCompartmentTable() {
+    const tbody = document.getElementById('tbody-compartments');
+    if (!tbody || !this.engine.mb) return;
+
+    const matrix = this.engine.mb.getCompartmentMatrix();
+    const activeCompartment = this.engine.lastWinningMBON ? this.engine.lastWinningMBON.compartment : 'gamma5';
+
+    tbody.innerHTML = matrix.map(row => {
+      const isActive = (row.compartment === activeCompartment);
+      const rowClass = isActive ? 'class="active-comp"' : '';
+      return `
+        <tr ${rowClass}>
+          <td><b>${row.compartment}</b></td>
+          <td>${row.mbons}</td>
+          <td>${row.labels}</td>
+          <td>${row.neurotransmitter}</td>
+          <td>${row.function}</td>
+          <td>${row.depressedEdges} / ${row.totalEdges} (${row.pct}%)</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  renderLexiconTable() {
+    const tbody = document.getElementById('tbody-lexicon');
+    if (!tbody) return;
 
     if (this.engine.lexicon.size === 0) {
-      container.innerHTML = `<div class="empty-lexicon">Tabula Rasa: No conditioned words yet.</div>`;
+      tbody.innerHTML = `<tr><td colspan="4" class="c-muted">Tabula Rasa: No conditioned vocabulary yet.</td></tr>`;
       return;
     }
 
-    container.innerHTML = '';
     const sorted = Array.from(this.engine.lexicon.values()).sort((a, b) => b.count - a.count);
 
-    sorted.slice(0, 30).forEach(item => {
-      const chip = document.createElement('span');
-      chip.className = 'lexicon-chip';
-      chip.textContent = `${item.token} (${item.count}x)`;
-      chip.title = `Confidence: ${item.confidence}%`;
-      chip.addEventListener('click', () => {
-        const input = document.getElementById('chat-input');
-        if (input) {
-          input.value = (input.value ? input.value + ' ' : '') + item.token;
-          input.focus();
-        }
-      });
-      container.appendChild(chip);
-    });
+    tbody.innerHTML = sorted.slice(0, 21).map(item => {
+      const confClass = item.confidence > 70 ? 'c-green' : item.confidence > 40 ? 'c-yellow' : 'c-muted';
+      return `
+        <tr>
+          <td><b class="c-blue">${this.escapeHTML(item.token)}</b></td>
+          <td>${item.count}x</td>
+          <td class="${confClass}">${item.confidence}%</td>
+          <td>${item.confidence > 60 ? 'Conditioned' : 'Emerging'}</td>
+        </tr>
+      `;
+    }).join('');
   }
 }
