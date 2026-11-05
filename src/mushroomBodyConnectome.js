@@ -6,8 +6,24 @@
 
 import { flywireDatasetInfo, genuineFlyWireMBONs, genuineFlyWireKCsRight, genuineFlyWireDANs } from './flywireConnectomeData.js';
 
+// Deterministic 32-bit PRNG for rigorous reproducible benchmarks across seeds
+function mulberry32(a) {
+  let s = a >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 export class MushroomBodyConnectome {
-  constructor() {
+  constructor(options = {}) {
+    this.seed = options.seed !== undefined ? options.seed : null;
+    this.rng = this.seed !== null ? mulberry32(this.seed) : Math.random;
+    this.disablePlasticity = !!options.disablePlasticity;
+    this.shuffleConnectome = !!options.shuffleConnectome;
+
     this.flywireInfo = flywireDatasetInfo;
     this.numPNs = 64;              // Johnston's Organ / AMMC auditory tonotopic channels
     this.numKCs = genuineFlyWireKCsRight.length; // 2,597 authentic FlyWire hemibrain Kenyon cells
@@ -133,15 +149,15 @@ export class MushroomBodyConnectome {
       this.kcCompartmentInnervations.push(new Set(targetCompartments));
 
       // Convergent random sampling of 5 to 7 PNs (Caron et al. 2013)
-      const numInputs = 5 + Math.floor(Math.random() * 3);
+      const numInputs = 5 + Math.floor(this.rng() * 3);
       const sampledPNs = new Set();
       while (sampledPNs.size < numInputs) {
-        sampledPNs.add(Math.floor(Math.random() * this.numPNs));
+        sampledPNs.add(Math.floor(this.rng() * this.numPNs));
       }
 
       const inputs = [];
       sampledPNs.forEach(pnIdx => {
-        const w = 0.85 + Math.random() * 0.35; // Log-normal variation
+        const w = 0.85 + this.rng() * 0.35; // Log-normal variation
         inputs.push({ pnIdx, weight: w });
       });
       this.pnToKcWeights.push(inputs);
@@ -156,6 +172,24 @@ export class MushroomBodyConnectome {
         } else {
           this.kcToMbonConnected[weightIdx] = 0;
           this.kcToMbonWeights[weightIdx] = 0.0; // Non-existent anatomical connection
+        }
+      }
+    }
+
+    // Shuffled connectome negative control: permute connectivity matrix to disrupt compartment alignment
+    if (this.shuffleConnectome) {
+      const len = this.kcToMbonConnected.length;
+      for (let i = len - 1; i > 0; i--) {
+        const j = Math.floor(this.rng() * (i + 1));
+        const temp = this.kcToMbonConnected[i];
+        this.kcToMbonConnected[i] = this.kcToMbonConnected[j];
+        this.kcToMbonConnected[j] = temp;
+      }
+      for (let i = 0; i < len; i++) {
+        if (this.kcToMbonConnected[i] === 0) {
+          this.kcToMbonWeights[i] = 0.0;
+        } else {
+          this.kcToMbonWeights[i] = this.baselineWeight;
         }
       }
     }
@@ -292,7 +326,7 @@ export class MushroomBodyConnectome {
       const maxAct = rankedMBONs[0].activity;
       const exps = this.mbonActivity.map(a => Math.exp((a - maxAct) / temperature));
       const sumExp = exps.reduce((a, b) => a + b, 0);
-      let r = Math.random() * sumExp;
+      let r = this.rng() * sumExp;
       for (let j = 0; j < this.numMBONs; j++) {
         r -= exps[j];
         if (r <= 0) {
@@ -337,6 +371,17 @@ export class MushroomBodyConnectome {
     const compIdx = this.compartments.indexOf(chosenMBON.compartment);
 
     this.conditioningTrials++;
+
+    if (this.disablePlasticity) {
+      return {
+        actionIdx,
+        actionLabel: chosenMBON.label,
+        scalarReward,
+        depressedSynapsesThisTrial: 0,
+        totalDepressedSynapses: 0,
+        plasticityDisabled: true
+      };
+    }
 
     let depressedCount = 0;
 
