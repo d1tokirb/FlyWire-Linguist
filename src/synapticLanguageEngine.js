@@ -1,7 +1,7 @@
 // Synaptic Language Acquisition Engine (FlyWire Mushroom Body Connectome)
 // Driven by authentic Drosophila melanogaster Mushroom Body neurobiology:
 // - PNs: 64 acoustic / tonotopic sensory projection neurons (Johnston's organ -> AMMC)
-// - KCs: 2,640 Kenyon cells with ~5% sparse coding via APL GABAergic feedback inhibition
+// - KCs: 2,597 Kenyon cells with ~5% sparse coding via APL GABAergic feedback inhibition
 // - MBONs: Output compartments across 15 canonical anatomical lobes
 // - DANs: PAM (Reward) and PPL1 (Aversive) compartment-specific dopaminergic clusters
 // - Purely Neural Output: Outputs are generated directly and exclusively by
@@ -207,7 +207,7 @@ export class SynapticLanguageEngine {
       responseText = parts.join('... ') + '...';
       responseWords = parts;
       confidence = Math.floor(5 + Math.random() * 10);
-      circuit = `Subesophageal Babble Motor - Tabula Rasa (KCs: ${mbResult.activeKCCount}/2,640 active)`;
+      circuit = `Subesophageal Babble Motor - Tabula Rasa (KCs: ${mbResult.activeKCCount}/2,597 active)`;
       this.totalSyllablesBabble += numSyllables;
     } else {
       // Conditioned response: Driven directly by winning MBONs!
@@ -299,53 +299,35 @@ export class SynapticLanguageEngine {
   }
 
   // ==========================================================================
-  // TEACH CORRECTION: Pair prompt with explicit target via biological plasticity
+  // TEACH CORRECTION: Aversive Feedback & Sensory Acoustic Ingestion
   // ==========================================================================
+  // Strictly reinforcement-based: Does NOT inject external answers into the mushroom body.
+  // Erroneous chosen action receives scalar punishment; prompt and speech are ingested
+  // purely as auditory sensory experiences.
   teachCorrection(correctPhrase) {
     const correctTokens = this.tokenize(correctPhrase);
     if (correctTokens.length === 0) return;
 
-    this.ppl1Aversion = Math.min(100, this.ppl1Aversion + 15.0);
-    this.pamDopamine = Math.min(100, this.pamDopamine + 10.0);
+    this.ppl1Aversion = Math.min(100, this.ppl1Aversion + 20.0);
+    this.pamDopamine = Math.max(0, this.pamDopamine - 10.0);
 
-    // Ingest into lexicon
+    // Apply scalar punishment (-1.0) to the chosen erroneous action
+    this.mb.applyReinforcement(-1.0);
+
+    // Ingest speech into auditory lexicon tracking
     for (const token of correctTokens) {
       if (!this.lexicon.has(token)) {
         this.lexicon.set(token, {
           token,
-          count: 2,
-          confidence: 60,
+          count: 1,
+          confidence: 30,
           learnedAt: Date.now(),
           firstSeenPrompt: this.lastUserPrompt
         });
       } else {
         const item = this.lexicon.get(token);
-        item.count += 2;
-        item.confidence = Math.min(100, item.confidence + 20);
+        item.count += 1;
       }
-    }
-
-    // Connect in mushroom body:
-    // 1. Forward pass on the prompt to activate its Kenyon cell pattern
-    const promptTokens = this.tokenize(this.lastUserPrompt);
-    this.mb.forward(promptTokens);
-
-    // 2. Punish previous incorrect token (if any)
-    if (this.lastGeneratedWords.length > 0) {
-      this.mb.applyPlasticity(this.lastGeneratedWords[0], 0.0, 1.0);
-    }
-
-    // 3. Reward and lock in correct target token via PAM LTD
-    const targetToken = correctTokens.find(w => w.length > 3) || correctTokens[0];
-    this.mb.applyPlasticity(targetToken, 1.0, 0.0);
-
-    // Connect bigrams
-    for (let i = 0; i < correctTokens.length - 1; i++) {
-      const w1 = correctTokens[i];
-      const w2 = correctTokens[i + 1];
-      if (!this.bigrams.has(w1)) this.bigrams.set(w1, new Map());
-      const bMap = this.bigrams.get(w1);
-      bMap.set(w2, (bMap.get(w2) || 0) + 3);
     }
 
     this.saveBrain();

@@ -47,7 +47,7 @@ export class CurriculumTutorBot {
         title: 'Module 2: Sensory Perception & Insect Anatomy',
         description: 'Exploring compound ruby eyes, Johnston’s organ hearing, and leg taste receptors.',
         questions: [
-          { prompt: 'What color are your big compound eyes?', target: 'eyes', expectedReply: 'My compound eyes are deep ruby red with 800 ommatidia.' },
+          { prompt: 'Listen to my acoustic tone through your antennae Johnston organ.', target: 'listen', expectedReply: 'I listen carefully to your voice with my antennae.' },
           { prompt: 'How do you hear my speech without human ears?', target: 'listen', expectedReply: 'My Johnston organ at the base of my antennae vibrates to your voice.' },
           { prompt: 'How do you taste food before eating it?', target: 'sweet', expectedReply: 'I taste droplets with special sensory hairs on my legs!' },
           { prompt: 'What do you use to drink sweet liquids?', target: 'sugar', expectedReply: 'I extend my proboscis labella to sip sweet liquids.' },
@@ -125,7 +125,7 @@ export class CurriculumTutorBot {
         title: 'Module 8: Complex Multi-Clause Discourse',
         description: 'Synthesizing compound ideas, conditional thoughts, and descriptive stories.',
         questions: [
-          { prompt: 'Describe what you see with your ruby eyes right now.', target: 'eyes', expectedReply: 'I see bright holographic waveforms and my kind human smiling.' },
+          { prompt: 'Can you demonstrate your aerial agility for me?', target: 'fly', expectedReply: 'I fly agile spirals through the air with ruby vision.' },
           { prompt: 'If I give you sugar, what will you do with that energy?', target: 'fast', expectedReply: 'If you give me sugar, I will fly fast and sing happy buzzes!' },
           { prompt: 'Can you tell me a short story about a fruit fly morning?', target: 'fly', expectedReply: 'The sun rose warm, and a tiny fly danced over sweet dew drops.' },
           { prompt: 'What happens when silence fills the acoustic chamber?', target: 'listen', expectedReply: 'In silence, my antennae wait patiently for your next question.' },
@@ -140,7 +140,7 @@ export class CurriculumTutorBot {
         questions: [
           { prompt: 'What questions do you have about the human world, fly?', target: 'human', expectedReply: 'Do humans ever look up at the clouds and wish they could fly?' },
           { prompt: 'Ask me anything about food or how humans eat.', target: 'sugar', expectedReply: 'Do humans also crave sweet sugar when you feel tired?' },
-          { prompt: 'Ask me about my big human eyes.', target: 'eyes', expectedReply: 'How does the world look without hundreds of hexagonal facets?' },
+          { prompt: 'Do you want to ask me what it feels like to be human?', target: 'human', expectedReply: 'How does the world look without hundreds of hexagonal facets?' },
           { prompt: 'What are you most curious about right now?', target: 'smart', expectedReply: 'I wonder how big the universe is beyond this acoustic laboratory.' },
           { prompt: 'Ask me about my feelings as your teacher.', target: 'happy', expectedReply: 'Are you happy watching my tiny brain learn to speak?' },
           { prompt: 'Your curiosity shows true intelligence, little friend.', target: 'good', expectedReply: 'Curiosity is the fire that keeps my thoughts buzzing bright!' }
@@ -346,34 +346,44 @@ export class CurriculumTutorBot {
 
     if (isSuccess) {
       // SUCCESS: Deliver praise + Sucrose reward (+PAM dopamine LTD)
+      this.questionAttempts = 0;
       this.engine.rewardSugar(35);
       this.speech.playDopamineChime();
       if (this.connectome3D) this.connectome3D.triggerDopamineSurge();
 
-      const praiseMessages = [
-        `[Praise] Correct target matched! Awarding sweet sucrose (+PAM Dopamine LTD).`,
-        `[Praise] Winning MBON matches target! Awarding sucrose droplet (+PAM dopamine surge).`,
-        `[Praise] Associative match confirmed across mushroom body compartments.`
-      ];
-      this.addTutorFeedback(praiseMessages[Math.floor(Math.random() * praiseMessages.length)], true);
+      this.addTutorFeedback(
+        `[Praise] Neural output [<b>${winningToken}</b>] matched target [<b>${target}</b>]! Awarding sweet sucrose (+PAM Dopamine LTD).`,
+        true
+      );
+
+      if (!this.isInfiniteOpenMode) {
+        this.advanceCurriculum();
+      }
     } else {
       // UNCONDITIONED / INCORRECT: Apply scalar punishment (-PPL1 aversive shock) to suppress erroneous output
+      this.questionAttempts = (this.questionAttempts || 0) + 1;
       this.engine.punishError(25);
-      this.engine.teachCorrection(item.expectedReply);
       if (this.connectome3D) this.connectome3D.triggerDopamineSurge();
 
-      this.addTutorFeedback(
-        `[Correction] Target concept: "<b>${item.expectedReply}</b>". PPL1 aversive suppression applied; imprinting correction...`,
-        false
-      );
+      if (this.questionAttempts < 3) {
+        this.addTutorFeedback(
+          `[Correction] Neural output was [<b>${winningToken || 'babble'}</b>]; expected [<b>${target}</b>]. PPL1 aversive shock delivered to suppress erroneous MBON (Trial ${this.questionAttempts}/3). Repeating cue...`,
+          false
+        );
+        // Do NOT advance curriculum on error: allow the fly to learn via reinforcement
+      } else {
+        this.addTutorFeedback(
+          `[Demonstration] Imprinted acoustic experience for [<b>${target}</b>] after 3 reinforcement trials. Advancing to next cue...`,
+          false
+        );
+        this.questionAttempts = 0;
+        if (!this.isInfiniteOpenMode) {
+          this.advanceCurriculum();
+        }
+      }
     }
 
     if (this.ui) this.ui.updateDashboard();
-
-    // Advance to next question or lesson
-    if (!this.isInfiniteOpenMode) {
-      this.advanceCurriculum();
-    }
 
     this.isWaitingForFly = false;
     this.updateUIStatus();

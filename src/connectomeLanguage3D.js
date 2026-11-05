@@ -26,9 +26,9 @@ export class ConnectomeLanguage3D {
   }
 
   initKenyonCellField() {
-    // 2,640 Kenyon Cells distributed across FlyWire Mushroom Body Calyx and Lobes
-    // 650 gamma, 1,300 alpha/beta, 690 alpha'/beta'
-    this.numKCs = 2640;
+    // 2,597 Kenyon Cells distributed across FlyWire Mushroom Body Calyx and Lobes
+    // Authenticated FlyWire FAFB v783 right hemibrain connectome
+    this.numKCs = 2597;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(this.numKCs * 3);
     const colors = new Float32Array(this.numKCs * 3);

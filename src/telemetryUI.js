@@ -285,7 +285,7 @@ export class TelemetryUI {
 
       const activeKCsElem = document.getElementById('val-active-kcs');
       if (activeKCsElem) {
-        activeKCsElem.textContent = `${this.engine.lastActiveKCCount || 0} / 2,640`;
+        activeKCsElem.textContent = `${this.engine.lastActiveKCCount || 0} / 2,597`;
       }
 
       const aplElem = document.getElementById('val-apl-inhibition');
