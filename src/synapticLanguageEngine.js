@@ -350,12 +350,12 @@ export class SynapticLanguageEngine {
     return this.mb.computePatternOverlap(tokensA, tokensB);
   }
 
-  // Reset to Tabula Rasa
+  // Reset to Tabula Rasa: restore all synaptic weights strictly to empirical FlyWire baselines
   resetToTabulaRasa() {
     this.lexicon.clear();
     this.bigrams.clear();
     this.dialogueHistory = [];
-    this.mb = new MushroomBodyConnectome(); // Fresh connectome with all weights = 1.0
+    this.mb.resetWeights(); // Revert all weights directly to measured FlyWire baselines (0 depressed)
     this.totalWordsHeard = 0;
     this.totalUtterancesSpoken = 0;
     this.totalSyllablesBabble = 0;
@@ -369,6 +369,7 @@ export class SynapticLanguageEngine {
 
     try {
       if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('flywire_linguist_brain_fafb_v783');
         localStorage.removeItem('flywire_linguist_brain_v3');
       }
     } catch (e) {}
@@ -380,12 +381,10 @@ export class SynapticLanguageEngine {
     try {
       if (typeof localStorage === 'undefined') return;
       const serializableLexicon = Array.from(this.lexicon.entries());
-      const serializableBigrams = Array.from(this.bigrams.entries()).map(([k, map]) => [k, Array.from(map.entries())]);
 
       const data = {
-        version: 3,
+        version: 'fafb_v783',
         lexicon: serializableLexicon,
-        bigrams: serializableBigrams,
         kcToMbonWeights: Array.from(this.mb.kcToMbonWeights),
         totalWordsHeard: this.totalWordsHeard,
         totalUtterancesSpoken: this.totalUtterancesSpoken,
@@ -395,7 +394,7 @@ export class SynapticLanguageEngine {
         conversationalTurnCount: this.conversationalTurnCount
       };
 
-      localStorage.setItem('flywire_linguist_brain_v3', JSON.stringify(data));
+      localStorage.setItem('flywire_linguist_brain_fafb_v783', JSON.stringify(data));
     } catch (e) {
       console.warn('Failed to save fly brain to localStorage', e);
     }
@@ -404,15 +403,14 @@ export class SynapticLanguageEngine {
   loadBrain() {
     try {
       if (typeof localStorage === 'undefined') return;
-      const raw = localStorage.getItem('flywire_linguist_brain_v3');
+      const raw = localStorage.getItem('flywire_linguist_brain_fafb_v783');
       if (!raw) return;
 
       const data = JSON.parse(raw);
+      if (data.version !== 'fafb_v783') return;
+
       if (data.lexicon) {
         this.lexicon = new Map(data.lexicon);
-      }
-      if (data.bigrams) {
-        this.bigrams = new Map(data.bigrams.map(([k, entries]) => [k, new Map(entries)]));
       }
       if (data.kcToMbonWeights && data.kcToMbonWeights.length === this.mb.kcToMbonWeights.length) {
         this.mb.kcToMbonWeights.set(data.kcToMbonWeights);

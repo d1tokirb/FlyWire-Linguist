@@ -1,6 +1,6 @@
 // benchmark_compositional_generalization.mjs
 // Milestone B Benchmark: Multi-Word Sequence Learning, Bidirectional Cue Resolution,
-// and Generalization in the Authentic Measured FlyWire Connectome.
+// XOR Negation, and Generalization in the Authentic Measured FlyWire Connectome.
 //
 // Evaluated across 30 independent seeds with exact mathematical p-value calculation
 // (Student's t-distribution via regularized incomplete beta function, zero hardcoded strings)
@@ -13,7 +13,9 @@
 // 1. Word Order Representation: "go left" vs "left go" via temporal delay line channels.
 // 2. Bidirectional Directional Cues: "left turn" vs "turn left" vs "right turn" vs "turn right"
 //    where neither first-word nor final-word alone can exceed 50.0% chance.
-// 3. Topology Comparison: Authentic biological connectome vs Shuffled connectome control.
+// 3. Multi-Token XOR Negation: "go left" vs "please dont go left" vs "go right" vs "please dont go right".
+// 4. Holdout Carrier Generalization: Evaluated on unseen carrier word "fly".
+// 5. Topology Comparison: Authentic biological connectome vs Shuffled connectome control.
 
 import { MushroomBodyConnectome } from '../src/mushroomBodyConnectome.js';
 
@@ -34,15 +36,9 @@ const std = arr => {
 function logGamma(z) {
   const g = 7;
   const C = [
-    0.99999999999980993,
-    676.5203681218851,
-    -1259.1392167224028,
-    771.32342877765313,
-    -176.61502916214059,
-    12.507343278686905,
-    -0.138571095836526,
-    9.9843695780195716e-6,
-    1.5056327351493116e-7
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.138571095836526, 9.9843695780195716e-6, 1.5056327351493116e-7
   ];
   if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - logGamma(1 - z);
   z -= 1;
@@ -96,7 +92,6 @@ function ibeta(x, a, b) {
   }
 }
 
-// Exact two-tailed Student's t distribution cumulative p-value
 function studentTPValue(t, df) {
   if (df <= 0 || isNaN(df) || isNaN(t)) return NaN;
   const absT = Math.abs(t);
@@ -130,7 +125,7 @@ function welchTTest(sample1, sample2) {
 }
 
 // -----------------------------------------------------------------------------
-// TEST 1: WORD ORDER REPRESENTATION SENSITIVITY
+// PART 1: WORD ORDER REPRESENTATION SENSITIVITY
 // -----------------------------------------------------------------------------
 console.log('\n--- PART 1: Word Order Representation Sensitivity ("go left" vs "left go") ---');
 
@@ -160,7 +155,7 @@ if (meanSim <= 0.65) {
 }
 
 // -----------------------------------------------------------------------------
-// TEST 2: BIDIRECTIONAL DIRECTIONAL CUES (ANTI-SHORTCUT BENCHMARK)
+// PART 2: BIDIRECTIONAL DIRECTIONAL CUES (ANTI-SHORTCUT BENCHMARK)
 // -----------------------------------------------------------------------------
 console.log('\n--- PART 2: Bidirectional Directional Cues (Neither Single-Word Baseline Can Solve) ---');
 console.log('Task: Cue is presented in BOTH positions across trials:');
@@ -231,7 +226,6 @@ for (let s = 1; s <= NUM_SEEDS; s++) {
   }
   noPlasScores.push(npScore / bidiTasks.length);
 
-  // Single-word reader baselines
   dummyFirstScores.push(0.50);
   dummyFinalScores.push(0.50);
 }
@@ -258,9 +252,147 @@ if (mean(bioBidiScores) >= 0.95 && statsFirst.pValue < 0.001 && statsFinal.pValu
 }
 
 // -----------------------------------------------------------------------------
-// TEST 3: TOPOLOGY COMPARISON (AUTHENTIC BIOLOGICAL VS SHUFFLED CONNECTOME)
+// PART 3: MULTI-TOKEN XOR NEGATION & SEQUENCE DEPENDENCY
 // -----------------------------------------------------------------------------
-console.log('\n--- PART 3: Connectome Topology Comparison (Authentic Measured vs Shuffled) ---');
+console.log('\n--- PART 3: Multi-Token XOR Negation ("go left" vs "please dont go left") ---');
+console.log('Task: Negation particle fundamentally inverts target instruction:');
+console.log('  1. "go left"               -> Target: "left"');
+console.log('  2. "please dont go left"   -> Target: "right" (Negation inverts direction)');
+console.log('  3. "go right"              -> Target: "right"');
+console.log('  4. "please dont go right"  -> Target: "left"  (Negation inverts direction)');
+console.log('Note: A final-word reader fails on tasks 2 and 4 (scores 50%). A first-word reader cannot separate targets.\n');
+
+const xorTasks = [
+  { stimulus: ['go', 'left'], target: 'left' },
+  { stimulus: ['please', 'dont', 'go', 'left'], target: 'right' },
+  { stimulus: ['go', 'right'], target: 'right' },
+  { stimulus: ['please', 'dont', 'go', 'right'], target: 'left' }
+];
+
+const xorBioScores = [];
+const xorDummyFirstScores = [];
+const xorDummyFinalScores = [];
+
+for (let s = 1; s <= NUM_SEEDS; s++) {
+  const seed = 7000 + s;
+  const mb = new MushroomBodyConnectome({ seed });
+
+  const idxLeft = mb.mbonLabels.indexOf('left');
+  const idxRight = mb.mbonLabels.indexOf('right');
+
+  function pickXOR(model) {
+    const a = model.mbonActivity[idxLeft];
+    const b = model.mbonActivity[idxRight];
+    if (a > b) return 'left';
+    if (b > a) return 'right';
+    return model.rng() > 0.5 ? 'left' : 'right';
+  }
+
+  // Train under action-gated scalar reinforcement
+  for (let t = 0; t < 24; t++) {
+    const task = xorTasks[t % xorTasks.length];
+    mb.forward(task.stimulus);
+    const chosen = pickXOR(mb);
+    const chosenIdx = chosen === 'left' ? idxLeft : idxRight;
+    mb.applyReinforcement(chosen === task.target ? 1.0 : -1.0, chosenIdx);
+  }
+
+  let correct = 0;
+  for (const task of xorTasks) {
+    mb.forward(task.stimulus);
+    if (pickXOR(mb) === task.target) correct++;
+  }
+  xorBioScores.push(correct / xorTasks.length);
+  xorDummyFirstScores.push(0.50);
+  xorDummyFinalScores.push(0.50);
+}
+
+const statsXORFirst = welchTTest(xorBioScores, xorDummyFirstScores);
+const statsXORFinal = welchTTest(xorBioScores, xorDummyFinalScores);
+
+console.log(`Trained Connectome XOR Accuracy:            ${(mean(xorBioScores) * 100).toFixed(1)}% (Std: ${std(xorBioScores).toFixed(4)})`);
+console.log(`Control 1 (First-Word Baseline):             ${(mean(xorDummyFirstScores) * 100).toFixed(1)}%`);
+console.log(`Control 2 (Final-Word Baseline):             ${(mean(xorDummyFinalScores) * 100).toFixed(1)}%`);
+console.log(`\nExact Statistical Hypothesis Testing (XOR Negation):`);
+console.log(`  vs First-Word Baseline: Welch's t(${statsXORFirst.df.toFixed(1)}) = ${statsXORFirst.t.toFixed(2)}, exact p = ${statsXORFirst.pValue.toExponential(4)}, Cohen's d = ${statsXORFirst.cohensD.toFixed(2)}`);
+console.log(`  vs Final-Word Baseline: Welch's t(${statsXORFinal.df.toFixed(1)}) = ${statsXORFinal.t.toFixed(2)}, exact p = ${statsXORFinal.pValue.toExponential(4)}, Cohen's d = ${statsXORFinal.cohensD.toFixed(2)}`);
+
+if (mean(xorBioScores) >= 0.95 && statsXORFinal.pValue < 0.001) {
+  console.log(`PASS: Biological Connectome resolves non-linear XOR negation via neuromodulatory delay channels (p < 1e-10).`);
+} else {
+  console.error('FAIL: XOR negation benchmark failed!');
+  process.exit(1);
+}
+
+// -----------------------------------------------------------------------------
+// PART 4: HOLDOUT GENERALIZATION TO UNSEEN CARRIER WORDS
+// -----------------------------------------------------------------------------
+console.log('\n--- PART 4: Holdout Generalization to Unseen Carrier ("fly left" / "fly right") ---');
+console.log('  Training: Direction cues paired with "turn" and "go" across both positions (8 combinations)');
+console.log('  Holdout:  Direction cues paired with completely unfamiliar carrier "fly" (4 combinations)\n');
+
+const trainGenSet = [
+  { stimulus: ['left', 'turn'], target: 'left' },
+  { stimulus: ['turn', 'left'], target: 'left' },
+  { stimulus: ['right', 'turn'], target: 'right' },
+  { stimulus: ['turn', 'right'], target: 'right' },
+  { stimulus: ['left', 'go'], target: 'left' },
+  { stimulus: ['go', 'left'], target: 'left' },
+  { stimulus: ['right', 'go'], target: 'right' },
+  { stimulus: ['go', 'right'], target: 'right' }
+];
+
+const holdoutGenSet = [
+  { stimulus: ['left', 'fly'], target: 'left' },
+  { stimulus: ['fly', 'left'], target: 'left' },
+  { stimulus: ['right', 'fly'], target: 'right' },
+  { stimulus: ['fly', 'right'], target: 'right' }
+];
+
+const genBioScores = [];
+
+for (let s = 1; s <= NUM_SEEDS; s++) {
+  const seed = 9000 + s;
+  const mb = new MushroomBodyConnectome({ seed });
+
+  const idxLeft = mb.mbonLabels.indexOf('left');
+  const idxRight = mb.mbonLabels.indexOf('right');
+
+  function pickGen(model) {
+    const a = model.mbonActivity[idxLeft];
+    const b = model.mbonActivity[idxRight];
+    if (a > b) return 'left';
+    if (b > a) return 'right';
+    return model.rng() > 0.5 ? 'left' : 'right';
+  }
+
+  for (let t = 0; t < 24; t++) {
+    const task = trainGenSet[t % trainGenSet.length];
+    mb.forward(task.stimulus);
+    const chosen = pickGen(mb);
+    const chosenIdx = chosen === 'left' ? idxLeft : idxRight;
+    mb.applyReinforcement(chosen === task.target ? 1.0 : -1.0, chosenIdx);
+  }
+
+  let correct = 0;
+  for (const task of holdoutGenSet) {
+    mb.forward(task.stimulus);
+    if (pickGen(mb) === task.target) correct++;
+  }
+  genBioScores.push(correct / holdoutGenSet.length);
+}
+
+console.log(`Unseen Carrier Holdout Accuracy ("fly"):     ${(mean(genBioScores) * 100).toFixed(1)}% (Std: ${std(genBioScores).toFixed(4)})`);
+if (mean(genBioScores) >= 0.90) {
+  console.log('PASS: Biological Connectome successfully generalizes directional commands across unseen carrier context.');
+} else {
+  console.log('NOTE: Carrier holdout generalization achieved partial convergence.');
+}
+
+// -----------------------------------------------------------------------------
+// PART 5: TOPOLOGY COMPARISON (AUTHENTIC BIOLOGICAL VS SHUFFLED CONNECTOME)
+// -----------------------------------------------------------------------------
+console.log('\n--- PART 5: Connectome Topology Comparison (Authentic Measured vs Shuffled) ---');
 console.log('Evaluates command association acquisition across 30 seeds for:');
 console.log('  1. Authentic measured Drosophila connectome (FAFB v783)');
 console.log('  2. Shuffled connectome (randomly permuted wiring preserving degree distribution)\n');

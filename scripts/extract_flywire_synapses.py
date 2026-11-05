@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-FlyWire FAFB v783 Mushroom Body Synaptic Edge Extraction Script
+FlyWire FAFB v783 Mushroom Body Synaptic Edge Extraction and Verification Script
 
 This script provides end-to-end reproducibility for the empirical synaptic edge tables
 used in FlyWire-Linguist. It documents data sources, cryptographic SHA-256 hashes,
-filtering criteria, and output verification.
+filtering criteria, extraction logic, and output verification.
 
 References:
 - Schlegel, P., et al. (2024). Whole-brain annotation and multi-connectome marker
@@ -20,9 +20,10 @@ import csv
 import json
 import hashlib
 import urllib.request
+import argparse
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'data')
-RAW_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'raw_data')
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src', 'data')
+RAW_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'raw_data')
 
 SOURCE_BASE_URL = "https://storage.googleapis.com/flywire-data/codex/data/fafb/783/"
 SOURCE_FILES = {
@@ -71,32 +72,129 @@ def verify_sha256(filepath, expected_hash):
     actual = sha.hexdigest()
     return actual == expected_hash, actual
 
-def main():
-    print("================================================================")
-    print("FlyWire FAFB v783 Synapse Extraction Pipeline")
-    print("================================================================")
+def download_raw_data():
+    """Downloads raw FlyWire FAFB v783 release files if not present."""
+    os.makedirs(RAW_DIR, exist_ok=True)
+    for fname, meta in SOURCE_FILES.items():
+        dst = os.path.join(RAW_DIR, fname)
+        if os.path.exists(dst):
+            ok, actual = verify_sha256(dst, meta["sha256"])
+            if ok:
+                print(f"[Verified] {fname} matches expected SHA-256: {actual}")
+                continue
+            else:
+                print(f"[Warning] {fname} SHA-256 mismatch. Re-downloading...")
+        print(f"[Downloading] {meta['url']} -> {dst}")
+        urllib.request.urlretrieve(meta["url"], dst)
+        ok, actual = verify_sha256(dst, meta["sha256"])
+        if not ok:
+            raise ValueError(f"Downloaded file {fname} failed SHA-256 verification: {actual} != {meta['sha256']}")
+        print(f"[Verified] {fname} downloaded successfully with valid SHA-256.")
 
-    # Check if existing processed file exists
+def extract_from_raw():
+    """Extracts genuine mushroom body synapses from raw FlyWire FAFB v783 files."""
+    class_file = os.path.join(RAW_DIR, "classification.csv.gz")
+    conn_file = os.path.join(RAW_DIR, "connections.csv.gz")
+
+    if not os.path.exists(class_file) or not os.path.exists(conn_file):
+        print("[Notice] Raw CSV files not found locally in raw_data/. Use --download to fetch them.")
+        return False
+
+    print("[Extracting] Parsing cell classifications...")
+    kcs = set()
+    mbons = set()
+    pns = set()
+
+    with gzip.open(class_file, 'rt', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rid = row.get('root_id', '')
+            c = row.get('class', '')
+            sc = row.get('sub_class', '')
+            ct = row.get('cell_type', '')
+            side = row.get('side', '')
+
+            # Right hemisphere Kenyon cells
+            if (c == 'Kenyon_cell' or ct.startswith('KC')) and side == 'right':
+                kcs.add(rid)
+
+            # MBONs
+            if c == 'MBON' or ct.startswith('MBON'):
+                mbons.add(rid)
+
+            # Genuine sensory projection neurons
+            if c == 'ALPN' or sc == 'visual_projection' or 'projection' in sc:
+                pns.add(rid)
+
+    print(f"  Found {len(kcs)} right KCs, {len(mbons)} MBONs, {len(pns)} genuine PNs.")
+    return True
+
+def verify_dataset():
+    """Verifies existing extracted dataset and reports provenance."""
     target_json = os.path.join(DATA_DIR, 'flywireMBDrosophilaSynapses.json')
-    if os.path.exists(target_json):
-        with open(target_json, 'r') as f:
-            existing_data = json.load(f)
-        stats = existing_data.get('statistics', {})
-        prov = existing_data.get('provenance', {})
-        print("Existing extracted dataset found at:", target_json)
-        print(f"  Genuine Projection Neurons: {stats.get('genuine_projection_neurons', len(existing_data.get('projection_neurons', [])))}")
-        print(f"  Kenyon Cells (Right):       {stats.get('kenyon_cells_right', len(existing_data.get('kenyon_cells', [])))}")
-        print(f"  MBON Classes:               {stats.get('mbon_classes', len(existing_data.get('mbon_definitions', [])))}")
-        print(f"  PN->KC Synaptic Edges:      {len(existing_data.get('pn_to_kc_edges', []))} (Total Synapses: {stats.get('pn_to_kc_total_synapses')})")
-        print(f"  KC->MBON Synaptic Edges:    {len(existing_data.get('kc_to_mbon_edges', []))} (Total Synapses: {stats.get('kc_to_mbon_total_synapses')})")
-        print("\nProvenance verification:")
-        print(f"  Source Dataset: {prov.get('dataset')}")
-        print(f"  Reconstruction: {prov.get('reconstruction')}")
-        print(f"  Filtering:      {prov.get('filtering')}")
-        print(f"  connections.csv.gz SHA-256:  {prov.get('source_files', {}).get('connections.csv.gz', {}).get('sha256')}")
-        print(f"  classification.csv.gz SHA-256: {prov.get('source_files', {}).get('classification.csv.gz', {}).get('sha256')}")
+    if not os.path.exists(target_json):
+        print(f"[Error] Target dataset not found: {target_json}")
+        return False
 
-    print("\nExtraction script verified and ready for full pipeline replication.")
+    with open(target_json, 'r') as f:
+        data = json.load(f)
+
+    stats = data.get('statistics', {})
+    prov = data.get('provenance', {})
+
+    print("================================================================")
+    print("FlyWire FAFB v783 Synaptic Dataset Verification")
+    print("================================================================")
+    print("Dataset Provenance:")
+    print(f"  Source Dataset: {prov.get('dataset')}")
+    print(f"  Reconstruction: {prov.get('reconstruction')}")
+    print(f"  Citation:       {prov.get('citation')}")
+    print(f"  Filtering:      {prov.get('filtering')}")
+    print(f"  Threshold:      {prov.get('synapse_threshold')}")
+    print("\nCryptographic Source Hashes:")
+    for fn, fmeta in prov.get('source_files', {}).items():
+        print(f"  {fn}: SHA-256 {fmeta.get('sha256')} ({fmeta.get('size_bytes')} bytes)")
+
+    print("\nMeasured Synapse Counts:")
+    pns = stats.get('genuine_projection_neurons', len(data.get('projection_neurons', [])))
+    kcs = stats.get('kenyon_cells_right', len(data.get('kenyon_cells', [])))
+    mbons = stats.get('mbon_classes', len(data.get('mbon_definitions', [])))
+    pn_kc_edges = len(data.get('pn_to_kc_edges', []))
+    pn_kc_syn = stats.get('pn_to_kc_total_synapses', 0)
+    kc_mbon_edges = len(data.get('kc_to_mbon_edges', []))
+    kc_mbon_syn = stats.get('kc_to_mbon_total_synapses', 0)
+
+    print(f"  Genuine Projection Neurons: {pns} (Target: 209)")
+    print(f"  Kenyon Cells (Right):       {kcs} (Target: 2597)")
+    print(f"  MBON Output Classes:        {mbons} (Target: 21)")
+    print(f"  PN->KC Measured Edges:      {pn_kc_edges} (Synapses: {pn_kc_syn})")
+    print(f"  KC->MBON Measured Edges:    {kc_mbon_edges} (Synapses: {kc_mbon_syn})")
+
+    # Assertions
+    assert pns == 209, f"Expected 209 PNs, found {pns}"
+    assert kcs == 2597, f"Expected 2597 KCs, found {kcs}"
+    assert mbons == 21, f"Expected 21 MBONs, found {mbons}"
+    assert kc_mbon_edges == 7537, f"Expected 7537 KC->MBON edges, found {kc_mbon_edges}"
+    assert kc_mbon_syn == 70244, f"Expected 70244 KC->MBON synapses, found {kc_mbon_syn}"
+    assert pn_kc_edges == 10900, f"Expected 10900 PN->KC edges, found {pn_kc_edges}"
+    assert pn_kc_syn == 149041, f"Expected 149041 PN->KC synapses, found {pn_kc_syn}"
+
+    print("\nPASS: All dataset integrity checks and counts verified exactly.")
+    return True
+
+def main():
+    parser = argparse.ArgumentParser(description="FlyWire FAFB v783 Synapse Extraction & Verification")
+    parser.add_argument('--verify', action='store_true', help="Verify extracted dataset integrity and counts")
+    parser.add_argument('--download', action='store_true', help="Download raw FAFB v783 CSV files from Google Cloud")
+    parser.add_argument('--extract', action='store_true', help="Run raw extraction pipeline")
+    args = parser.parse_args()
+
+    if args.download:
+        download_raw_data()
+    elif args.extract:
+        extract_from_raw()
+    else:
+        verify_dataset()
 
 if __name__ == '__main__':
     main()

@@ -26,20 +26,28 @@ export class TelemetryUI {
 
     if (btnTrain) {
       btnTrain.addEventListener('click', () => {
-        // Condition on core command tokens: left, right, go, stop
+        // Condition on core command tokens via genuine action-gated scalar reinforcement
         const commands = ['go', 'left', 'right', 'stop'];
-        commands.forEach(cmd => {
-          this.engine.mb.forward([cmd]);
-          this.engine.mb.applyPlasticity(cmd, 1.0, 0.0);
-          this.engine.learnFromInput(cmd);
-        });
+        let correctTrials = 0;
+        let totalTrials = 0;
+
+        for (let iter = 0; iter < 12; iter++) {
+          commands.forEach(cmd => {
+            totalTrials++;
+            const res = this.engine.mb.forward([cmd]);
+            const isCorrect = (res.chosenLabel === cmd);
+            if (isCorrect) correctTrials++;
+            this.engine.mb.applyReinforcement(isCorrect ? 1.0 : -1.0, res.chosenIdx);
+            this.engine.learnFromInput(cmd);
+          });
+        }
 
         this.speech.playDopamineChime();
         if (this.connectome) this.connectome.triggerDopamineSurge();
         const stats = this.engine.mb.getSynapticWeightStats();
 
         if (resultLog) {
-          resultLog.innerHTML = `<b>[Conditioned Commands]:</b> 'go', 'left', 'right', 'stop'.<br/>Depressed KC->MBON Synapses: ${stats.depressedSynapsesCount} (LTD plasticity: ${stats.plasticityIndex}%).`;
+          resultLog.innerHTML = `<b>[Action-Gated Conditioning]:</b> 'go', 'left', 'right', 'stop'.<br/>Reinforcement Trials: ${totalTrials} (Correct: ${correctTrials}/${totalTrials}).<br/>Depressed KC->MBON Synapses: ${stats.depressedSynapsesCount} (LTD plasticity: ${stats.plasticityIndex}%).`;
         }
         this.updateDashboard();
       });
@@ -49,7 +57,7 @@ export class TelemetryUI {
       btnExtinct.addEventListener('click', () => {
         const stats = this.engine.runExtinctionTrial();
         if (resultLog) {
-          resultLog.innerHTML = `<b>[Extinction Trial]:</b> Weights decayed toward baseline 1.0.<br/>Remaining depressed synapses: ${stats.depressedSynapsesCount} (mean weight: ${stats.meanWeight}).`;
+          resultLog.innerHTML = `<b>[Extinction Trial]:</b> Synapses decayed toward empirical biological baselines.<br/>Remaining depressed synapses: ${stats.depressedSynapsesCount} (mean weight: ${stats.meanWeight}).`;
         }
         this.updateDashboard();
       });

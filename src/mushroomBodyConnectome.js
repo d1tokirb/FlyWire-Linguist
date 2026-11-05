@@ -517,17 +517,6 @@ export class MushroomBodyConnectome {
     };
   }
 
-  // Backward-compatible wrapper that directs to applyReinforcement or supervised targeted LTD
-  applyPlasticity(targetToken, rewardDopamine = 1.0, punishmentDopamine = 0.0) {
-    const targetIdx = this.mbonLabels.indexOf(targetToken.toLowerCase());
-    if (targetIdx === -1) return null;
-    if (rewardDopamine > 0) {
-      return this.applyReinforcement(rewardDopamine, targetIdx);
-    } else {
-      return this.applyReinforcement(-punishmentDopamine, targetIdx);
-    }
-  }
-
   // Compute KC Pattern Overlap / Generalization between two phrases
   computePatternOverlap(tokensA, tokensB) {
     // Forward pass on A
@@ -574,6 +563,27 @@ export class MushroomBodyConnectome {
         }
       }
     }
+  }
+
+  // Restore every connection strictly to its measured empirical biological baseline
+  resetWeights() {
+    this.kcToMbonWeights.set(this.kcToMbonBaselineWeights);
+    this.conditioningTrials = 0;
+    this.totalSynapticDepressions = 0;
+    this.lastTrialDepressedCount = 0;
+    this.pnActivity.fill(0.0);
+    this.kcMembrane.fill(0.0);
+    this.kcActivity.fill(0.0);
+    this.mbonActivity.fill(0.0);
+    this.aplActivity = 0.0;
+    this.activeKCCount = 0;
+    this.lastChosenMBON = 0;
+  }
+
+  // Verify whether the connectome is in a genuine Tabula Rasa state (zero learning-induced changes)
+  isTabulaRasa() {
+    const stats = this.getSynapticWeightStats();
+    return stats.depressedSynapsesCount === 0 && this.totalSynapticDepressions === 0;
   }
 
   // Synaptic Weight Statistics for UI Telemetry

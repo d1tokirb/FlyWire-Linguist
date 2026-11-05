@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite --port 5178 --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node scripts/run_all_benchmarks.mjs",
+    "benchmark:2afc": "node scripts/benchmark_two_choice_associative_learning.mjs",
+    "benchmark:sequence": "node scripts/benchmark_compositional_generalization.mjs",
+    "verify:connectome": "python3 scripts/extract_flywire_synapses.py --verify"
   },
   "keywords": [
     "connectome",
