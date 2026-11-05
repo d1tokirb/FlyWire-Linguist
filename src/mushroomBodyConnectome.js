@@ -210,21 +210,21 @@ export class MushroomBodyConnectome {
     };
   }
 
-  // Authentic Phonetic & Acoustic Formant Sensory Encoding
-  // Converts spoken words into acoustic frequency channels mimicking Johnston's organ tonotopy
+  // Authentic Tonotopic Acoustic Sensory Encoding with Temporal Delay Channels
+  // Channels 0..31: Instantaneous acoustic phonemes (current word)
+  // Channels 32..63: Synaptic delay line / temporal memory trace (preceding word)
   encodeTokensToPNs(tokens) {
     this.pnActivity.fill(0.0);
     if (!tokens || tokens.length === 0) return this.pnActivity;
 
-    // Vowel formant table (F1: jaw height 200-900Hz, F2: tongue position 800-2500Hz)
     const vowelFormants = {
       'a': [750, 1200], 'e': [500, 1800], 'i': [280, 2300],
       'o': [500, 900],  'u': [320, 800],  'y': [350, 1900]
     };
 
-    for (const token of tokens) {
-      const clean = token.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (!clean) continue;
+    const encodeWord = (word, basePn) => {
+      const clean = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!clean) return;
 
       let primaryVowel = 'a';
       for (const char of clean) {
@@ -236,25 +236,34 @@ export class MushroomBodyConnectome {
 
       const [f1, f2] = vowelFormants[primaryVowel];
 
-      // Map F1 into PNs 0..20 (low-mid frequencies 200-900 Hz)
-      const pnF1 = Math.min(20, Math.max(0, Math.floor(((f1 - 200) / 700) * 20)));
-      this.pnActivity[pnF1] = Math.min(1.0, this.pnActivity[pnF1] + 0.8);
-      if (pnF1 > 0) this.pnActivity[pnF1 - 1] = Math.min(1.0, this.pnActivity[pnF1 - 1] + 0.4);
-      if (pnF1 < 20) this.pnActivity[pnF1 + 1] = Math.min(1.0, this.pnActivity[pnF1 + 1] + 0.4);
+      // Formant F1 (low-mid frequencies 200-900 Hz) -> relative channels 0..10
+      const relF1 = Math.min(10, Math.max(0, Math.floor(((f1 - 200) / 700) * 10)));
+      this.pnActivity[basePn + relF1] = Math.min(1.0, this.pnActivity[basePn + relF1] + 0.85);
 
-      // Map F2 into PNs 21..44 (mid-high frequencies 800-2500 Hz)
-      const pnF2 = Math.min(44, Math.max(21, 21 + Math.floor(((f2 - 800) / 1700) * 23)));
-      this.pnActivity[pnF2] = Math.min(1.0, this.pnActivity[pnF2] + 0.75);
+      // Formant F2 (mid-high frequencies 800-2500 Hz) -> relative channels 11..21
+      const relF2 = Math.min(21, Math.max(11, 11 + Math.floor(((f2 - 800) / 1700) * 10)));
+      this.pnActivity[basePn + relF2] = Math.min(1.0, this.pnActivity[basePn + relF2] + 0.80);
 
-      // Sibilants / fricatives ('s', 'z', 'sh', 'ch', 'f') map to high-frequency PNs 45..63
+      // Fricatives / sibilants -> relative channels 22..27
       if (/[szfcxk]/.test(clean)) {
-        const pnH = 48 + (clean.charCodeAt(0) % 15);
-        this.pnActivity[pnH] = Math.min(1.0, this.pnActivity[pnH] + 0.7);
+        const relH = 22 + (clean.charCodeAt(0) % 6);
+        this.pnActivity[basePn + relH] = Math.min(1.0, this.pnActivity[basePn + relH] + 0.75);
       }
 
-      // Word length & syllable rhythm channels
-      const rhythmPn = Math.abs((clean.length * 7) % 64);
-      this.pnActivity[rhythmPn] = Math.min(1.0, this.pnActivity[rhythmPn] + 0.5);
+      // Syllable length channel -> relative channels 28..31
+      const relLen = 28 + (clean.length % 4);
+      this.pnActivity[basePn + relLen] = Math.min(1.0, this.pnActivity[basePn + relLen] + 0.60);
+    };
+
+    if (tokens.length === 1) {
+      // Single word: occupies instantaneous channels 0..31
+      encodeWord(tokens[0], 0);
+    } else {
+      // Sequence: preceding word occupies delay line 32..63; current word occupies 0..31
+      const priorToken = tokens[tokens.length - 2];
+      const currentToken = tokens[tokens.length - 1];
+      encodeWord(currentToken, 0);
+      encodeWord(priorToken, 32);
     }
 
     return this.pnActivity;
