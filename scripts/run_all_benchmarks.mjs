@@ -45,6 +45,10 @@ const suite = [
   {
     name: '7. Milestone C: Sequential Neural Writing & Character-by-Character Acquisition (N=30)',
     cmd: 'node scripts/benchmark_sequential_neural_learning.mjs'
+  },
+  {
+    name: '8. Milestone D: Comparative Neural Language Implantation & Generalization (N=30)',
+    cmd: 'node scripts/benchmark_comparative_implants.mjs'
   }
 ];
 

@@ -486,3 +486,230 @@ body {
     border-bottom: 1px solid var(--border-line);
   }
 }
+
+/* ============================================================================
+   COMPARATIVE LAB VIEW & COHORT CARDS
+   ============================================================================ */
+.lab-view-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  background-color: var(--bg-dark);
+}
+
+.lab-hdr-bar {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-line);
+}
+
+.cohort-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.cohort-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-line);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.cohort-card:hover {
+  border-color: var(--border-active);
+}
+
+.cohort-card.card-paused {
+  opacity: 0.6;
+}
+
+.card-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fly-name {
+  font-weight: 700;
+  color: var(--txt-bright);
+  font-size: 11.5px;
+}
+
+.cond-badge {
+  font-size: 9.5px;
+  padding: 1px 5px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-sm {
+  font-size: 9.5px !important;
+  padding: 1px 4px !important;
+}
+
+.card-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 6px;
+  background: var(--bg-subtle);
+  padding: 4px 6px;
+  border: 1px solid var(--border-line);
+}
+
+.m-cell {
+  font-size: 10px;
+  color: var(--txt-muted);
+}
+
+.m-cell b {
+  color: var(--txt-bright);
+}
+
+.card-bar-row, .card-prompt-row, .card-output-row {
+  font-size: 10px;
+  color: var(--txt-muted);
+}
+
+.card-trace-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 4px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-line);
+  min-height: 24px;
+  align-items: center;
+}
+
+/* ============================================================================
+   EXPERIMENT SETUP MODAL
+   ============================================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(9, 13, 19, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--c-blue);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  width: 90%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-subtle);
+}
+
+.modal-title {
+  color: var(--txt-bright);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.modal-body {
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setup-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setup-label {
+  color: var(--c-blue);
+  font-weight: 700;
+  font-size: 10.5px;
+}
+
+.setup-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 6px;
+}
+
+.radio-label {
+  font-size: 10.5px;
+  color: var(--txt-main);
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.radio-label input {
+  margin-top: 2px;
+}
+
+.setup-info-box {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-line);
+  padding: 8px;
+  font-size: 10px;
+  color: var(--txt-muted);
+  line-height: 1.5;
+}
+
+.setup-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+}
+
+.checkpoint-status-text {
+  font-size: 10px;
+  color: var(--txt-muted);
+  margin-left: 6px;
+}
+
+.modal-footer {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background: var(--bg-subtle);
+}

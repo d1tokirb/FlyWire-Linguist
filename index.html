@@ -14,6 +14,8 @@
           <span class="txt-bold">FLYWIRE-LINGUIST v1.0</span> // Drosophila Mushroom Body Connectome (FAFB v783)
         </div>
         <div class="hdr-actions">
+          <button type="button" id="btn-open-setup" class="txt-btn btn-primary">[Configure Experiment]</button>
+          <button type="button" id="btn-toggle-view" class="txt-btn">[View: Single Fly View]</button>
           <button type="button" id="btn-toggle-mode" class="txt-btn btn-primary">[Mode: Sequential Neural Writing]</button>
           <button type="button" id="btn-audio" class="txt-btn">[Audio: On]</button>
           <button type="button" id="btn-export-lexicon" class="txt-btn">[Export Brain JSON]</button>
@@ -43,8 +45,73 @@
 
     <div class="divider"></div>
 
-    <!-- MAIN TWO-COLUMN SPLIT -->
-    <main id="main">
+    <!-- COMPARATIVE LAB VIEW (DEFAULT MULTI-FLY COHORT DASHBOARD) -->
+    <section id="comparative-lab-view" class="lab-view-container">
+      <!-- LAB CONTROLS BAR -->
+      <div class="panel-section lab-hdr-bar">
+        <div class="sec-title">[COMPARATIVE NEUROSCIENCE LABORATORY : MULTI-SUBJECT COHORT BENCHMARK]</div>
+        <div class="ctrl-row">
+          <button type="button" id="btn-lab-toggle-run" class="txt-btn btn-primary">[Start All Flies]</button>
+          <span>Speed:</span>
+          <select id="lab-speed-select" class="txt-select" title="Lab Execution Speed">
+            <option value="INSTANT">Instant (~1,500 trials/sec)</option>
+            <option value="HYPER">Hyper (~400 trials/sec)</option>
+            <option value="TURBO" selected>Turbo (~100 trials/sec)</option>
+            <option value="FAST">Fast (~15 trials/sec)</option>
+            <option value="NORMAL">Normal (~3 trials/sec)</option>
+          </select>
+          <button type="button" id="btn-lab-step" class="txt-btn">[Step 1 Matched Trial]</button>
+          <button type="button" id="btn-lab-train-25x" class="txt-btn">[Train 25x Batch]</button>
+          <button type="button" id="btn-lab-train-100x" class="txt-btn">[Train 100x Batch]</button>
+          <button type="button" id="btn-lab-run-holdout" class="txt-btn btn-warning">[Run Held-Out Challenge]</button>
+          <button type="button" id="btn-export-experiment-json" class="txt-btn">[Export Experiment JSON]</button>
+          <button type="button" id="btn-lab-reset" class="txt-btn btn-danger">[Reset All Cohorts]</button>
+        </div>
+        <div class="status-row" style="margin-top: 4px;">
+          <span>Lab Status: <b id="lab-status-badge">Idle</b></span>
+          <span class="sep">|</span>
+          <span>Matched Curriculum: <b>Mini-English (Agent &rarr; Action &rarr; Object)</b></span>
+          <span class="sep">|</span>
+          <span>Compositional Probe: <b>"you have sugar" (Unrewarded R=0)</b></span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- COHORT CARDS GRID -->
+      <div id="cohort-cards-grid" class="cohort-cards-grid">
+        <!-- Rendered dynamically by ComparativeUI -->
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- HELD-OUT COMPOSITIONAL GENERALIZATION RESULTS -->
+      <div class="panel-section" id="holdout-challenge-container">
+        <div class="sec-title" id="holdout-challenge-title">[HELD-OUT COMPOSITIONAL GENERALIZATION: "you have sugar" (Unseen Combination, R=0, Temp=0.0)]</div>
+        <div class="table-wrap" style="max-height: 200px;">
+          <table class="dense-tbl" id="tbl-holdout-challenge">
+            <thead>
+              <tr>
+                <th>SUBJECT ID</th>
+                <th>CONDITION</th>
+                <th>TARGET</th>
+                <th>EMITTED RESPONSE</th>
+                <th>EVALUATION</th>
+                <th>NEURAL EMISSION TRACE</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-holdout-challenge">
+              <tr>
+                <td colspan="6" class="c-muted">Click [Run Held-Out Challenge] to evaluate zero-reward compositional generalization across all active cohorts.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN TWO-COLUMN SPLIT (SINGLE FLY VIEW) -->
+    <main id="main" style="display: none;">
       <!-- LEFT: CONSOLE & HIGH-SPEED TEACHING -->
       <section id="col-left">
         <!-- TEACHING & CURRICULUM CONTROLS -->
@@ -252,6 +319,118 @@
         </div>
       </aside>
     </main>
+
+    <!-- EXPERIMENT SETUP MODAL -->
+    <div id="experiment-setup-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-hdr">
+          <div class="modal-title">[FLYWIRE-LINGUIST : EXPERIMENT SETUP LAB]</div>
+          <button type="button" id="btn-close-setup-modal" class="txt-btn">[Close X]</button>
+        </div>
+        <div class="divider"></div>
+        <form id="experiment-setup-form" class="modal-body" autocomplete="off">
+          <div class="setup-sec">
+            <div class="setup-label">01 / EXPERIMENT MODE:</div>
+            <div class="setup-radio-group">
+              <label class="radio-label">
+                <input type="radio" name="setup-mode" value="COMPARATIVE" checked />
+                <b>Comparative Lab</b> (Run 4-5 independent subjects simultaneously under matched curriculum)
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="setup-mode" value="SINGLE" />
+                <b>Single Fly</b> (Detailed connectome console, acoustic speech, and live interactive prompt)
+              </label>
+            </div>
+          </div>
+
+          <div class="setup-sec" id="setup-singlefly-options" style="display: none;">
+            <div class="setup-label">02 / INITIAL KNOWLEDGE IMPLANT (SINGLE FLY):</div>
+            <div class="setup-radio-group">
+              <label class="radio-label">
+                <input type="radio" name="setup-condition" value="BLANK" />
+                <b>Blank Brain (Tabula Rasa)</b> - Zero implanted linguistic priors; pure acoustic babble baseline
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="setup-condition" value="VOCABULARY" />
+                <b>Vocabulary Implant</b> - Prelearned associations for grounded words (i, you, want, have, sugar...)
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="setup-condition" value="GRAMMAR" />
+                <b>Language Structure Implant</b> - Prelearned transition order (agent &rarr; action &rarr; object)
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="setup-condition" value="COMBINED" checked />
+                <b>Vocabulary + Structure Implant</b> - Combined foundation for experimental Mini-English
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="setup-condition" value="SCRAMBLED" />
+                <b>Scrambled Control</b> - Permuted weight control matching L2 norm to test structural integrity
+              </label>
+            </div>
+          </div>
+
+          <div class="setup-sec" id="setup-multifly-options">
+            <div class="setup-label">02 / COMPARATIVE LAB COHORTS:</div>
+            <div class="setup-info-box">
+              Simultaneously initializes matched independent subjects:
+              <br/>- Fly 1: Alpha (Blank Tabula Rasa)
+              <br/>- Fly 2: Beta (Vocabulary Implant)
+              <br/>- Fly 3: Gamma (Language Structure Implant)
+              <br/>- Fly 4: Delta (Combined Foundation)
+              <br/>
+              <label style="margin-top: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                <input type="checkbox" id="setup-include-scrambled" checked />
+                Include Fly 5: Epsilon (Scrambled Weight Control)
+              </label>
+            </div>
+          </div>
+
+          <div class="setup-sec">
+            <div class="setup-label">03 / IMPLANT INTENSITY & PARAMETERS:</div>
+            <div class="setup-row">
+              <label>
+                Implant Intensity:
+                <select id="setup-intensity-select" class="txt-select">
+                  <option value="LIGHT">Light (Gentle synaptic biases, easy unlearning)</option>
+                  <option value="MEDIUM" selected>Medium (Standard balanced biological baseline)</option>
+                  <option value="HEAVY">Heavy (Deeply entrenched synaptic pathways)</option>
+                </select>
+              </label>
+              <label style="margin-left: 12px;">
+                Random Seed:
+                <input type="number" id="setup-seed-input" class="txt-input" value="42" style="width: 70px;" />
+              </label>
+            </div>
+          </div>
+
+          <div class="setup-sec">
+            <div class="setup-label">04 / TEACHING ENVIRONMENT:</div>
+            <div class="setup-row">
+              <select id="setup-env-select" class="txt-select">
+                <option value="AUTONOMOUS" selected>Autonomous Matched Curriculum (Autonomous step loop)</option>
+                <option value="INTERACTIVE">Interactive Laboratory (Manual stepping and batching)</option>
+                <option value="MANUAL">Manual Probe Only (Unrewarded baseline evaluation)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setup-sec">
+            <div class="setup-label">05 / RESTORE NEURAL CHECKPOINT (OPTIONAL):</div>
+            <div class="setup-row">
+              <input type="file" id="setup-checkpoint-file" accept=".json" class="txt-input" />
+              <div id="setup-checkpoint-status" class="checkpoint-status-text">No checkpoint selected.</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="modal-footer">
+            <button type="submit" id="btn-submit-setup" class="txt-btn btn-success">[Launch Experiment Simulation]</button>
+            <button type="button" id="btn-cancel-setup" class="txt-btn">[Cancel]</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

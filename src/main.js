@@ -1,34 +1,173 @@
 // Master Drosophila Linguist Controller
 // Minimalist, high-performance orchestration of connectome language engine,
-// insectoid speech synthesis, and real-time telemetry.
+// insectoid speech synthesis, real-time telemetry, multi-subject comparative lab,
+// and scientific experiment configuration.
 
 import { SequentialLanguageEngine } from './sequentialLanguageEngine.js';
 import { SequentialCurriculumTutor } from './sequentialCurriculumTutor.js';
 import { DrosophilaSpeechSynth } from './drosophilaSpeechSynth.js';
 import { TelemetryUI } from './telemetryUI.js';
+import { ComparativeLab } from './comparativeLab.js';
+import { ComparativeUI } from './comparativeUI.js';
+import { ExperimentSetupUI } from './experimentSetupUI.js';
+import { LanguageImplantEngine } from './languageImplantEngine.js';
+import { NeuralCheckpoint } from './neuralCheckpoint.js';
 
 export class App {
   constructor() {
+    this.currentView = 'COMPARATIVE'; // 'COMPARATIVE' or 'SINGLE'
     this.engine = new SequentialLanguageEngine({ mode: 'SEQUENTIAL' });
     this.speech = new DrosophilaSpeechSynth();
     this.ui = new TelemetryUI(this.engine, this.speech);
     this.tutor = new SequentialCurriculumTutor(this.engine, this.speech, this.ui);
     this.tutor.setSpeed('TURBO');
 
+    // Multi-subject comparative lab coordinator
+    this.lab = new ComparativeLab({ seed: 42, intensity: 'MEDIUM', includeScrambled: true });
+    this.lab.setSpeed('TURBO');
+    this.lab.onTrialComplete = () => {
+      this.comparativeUI.render();
+    };
+
+    this.comparativeUI = new ComparativeUI(this.lab, (flyIdx) => {
+      this.inspectFly(flyIdx);
+    });
+
+    this.setupUI = new ExperimentSetupUI((config) => {
+      this.applyExperimentConfig(config);
+    });
+
     this.engine.onStateChange = () => {
       this.ui.updateDashboard();
     };
 
     this.initEvents();
+    this.setView('COMPARATIVE');
+    this.comparativeUI.render();
     this.ui.updateDashboard();
 
-    // Autostart autonomous pedagogical teacher on page load
+    // Autostart comparative lab on initial load
     setTimeout(() => {
-      this.tutor.start();
-    }, 500);
+      if (this.currentView === 'COMPARATIVE' && !this.lab.isRunning) {
+        this.lab.start();
+        this.comparativeUI.updateControls();
+      }
+    }, 600);
+  }
+
+  setView(viewMode) {
+    this.currentView = viewMode;
+    const labView = document.getElementById('comparative-lab-view');
+    const singleView = document.getElementById('main');
+    const btnToggle = document.getElementById('btn-toggle-view');
+
+    if (viewMode === 'COMPARATIVE') {
+      if (labView) labView.style.display = 'flex';
+      if (singleView) singleView.style.display = 'none';
+      if (btnToggle) btnToggle.textContent = '[View: Single Fly View]';
+    } else {
+      if (labView) labView.style.display = 'none';
+      if (singleView) singleView.style.display = 'grid';
+      if (btnToggle) btnToggle.textContent = '[View: Comparative Lab]';
+    }
+  }
+
+  inspectFly(flyIdx) {
+    const fly = this.lab.subjects[flyIdx];
+    if (!fly) return;
+
+    // Point single fly telemetry and tutor to this subject's engine
+    this.engine = fly.engine;
+    this.ui.engine = fly.engine;
+    this.tutor.engine = fly.engine;
+
+    this.engine.onStateChange = () => {
+      this.ui.updateDashboard();
+    };
+
+    const stageNameEl = document.getElementById('val-stage-name');
+    if (stageNameEl) {
+      stageNameEl.textContent = `${fly.name} [${fly.condition}]`;
+      stageNameEl.style.color = fly.color;
+    }
+
+    this.setView('SINGLE');
+    this.ui.updateDashboard();
+  }
+
+  applyExperimentConfig(config) {
+    if (config.mode === 'COMPARATIVE') {
+      if (this.tutor && this.tutor.isRunning) {
+        this.tutor.pause();
+      }
+      this.lab.pause();
+      this.lab = new ComparativeLab({
+        seed: config.seed,
+        intensity: config.intensity,
+        includeScrambled: config.includeScrambled
+      });
+      this.lab.onTrialComplete = () => {
+        this.comparativeUI.render();
+      };
+      this.comparativeUI.lab = this.lab;
+      this.setView('COMPARATIVE');
+      this.comparativeUI.render();
+
+      if (config.environment === 'AUTONOMOUS') {
+        this.lab.start();
+        this.comparativeUI.updateControls();
+      }
+    } else {
+      // Single Fly mode
+      if (this.lab && this.lab.isRunning) {
+        this.lab.pause();
+      }
+      this.engine = new SequentialLanguageEngine({ mode: 'SEQUENTIAL' });
+      this.ui.engine = this.engine;
+      this.tutor.engine = this.engine;
+      this.engine.onStateChange = () => {
+        this.ui.updateDashboard();
+      };
+
+      if (config.importedCheckpoint) {
+        NeuralCheckpoint.restoreCheckpoint(this.engine, config.importedCheckpoint);
+      } else {
+        LanguageImplantEngine.applyImplant(this.engine, config.condition, config.intensity);
+      }
+
+      const stageNameEl = document.getElementById('val-stage-name');
+      if (stageNameEl) {
+        stageNameEl.textContent = `Subject [${config.condition || 'Custom'}]`;
+        stageNameEl.style.color = 'var(--c-blue)';
+      }
+
+      this.setView('SINGLE');
+      this.ui.updateDashboard();
+
+      if (config.environment === 'AUTONOMOUS') {
+        this.tutor.start();
+      } else {
+        this.tutor.pause();
+      }
+    }
   }
 
   initEvents() {
+    const btnToggleView = document.getElementById('btn-toggle-view');
+    if (btnToggleView) {
+      btnToggleView.addEventListener('click', () => {
+        const next = (this.currentView === 'COMPARATIVE') ? 'SINGLE' : 'COMPARATIVE';
+        this.setView(next);
+      });
+    }
+
+    const btnOpenSetup = document.getElementById('btn-open-setup');
+    if (btnOpenSetup) {
+      btnOpenSetup.addEventListener('click', () => {
+        this.setupUI.show();
+      });
+    }
+
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
 
@@ -101,12 +240,16 @@ export class App {
     const btnExport = document.getElementById('btn-export-lexicon');
     if (btnExport) {
       btnExport.addEventListener('click', () => {
-        const json = this.engine.exportBrainJSON();
+        const cp = NeuralCheckpoint.createCheckpoint(this.engine, {
+          name: 'Drosophila Subject',
+          condition: 'ACTIVE'
+        });
+        const json = JSON.stringify(cp, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `FlyWire_Drosophila_Brain_${Date.now()}.json`;
+        a.download = `FlyWire_Drosophila_Checkpoint_${Date.now()}.json`;
         a.click();
         URL.revokeObjectURL(url);
       });
