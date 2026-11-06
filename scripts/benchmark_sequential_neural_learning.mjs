@@ -88,9 +88,17 @@ function welchTTest(mean1, var1, n1, mean2, var2, n2) {
   const se2 = var2 / n2;
   const seDiff = Math.sqrt(se1 + se2);
   if (seDiff === 0) {
-    const tVal = mean1 > mean2 ? 1936.49 : (mean1 < mean2 ? -1936.49 : 0.0);
-    const cohen = mean1 > mean2 ? 500.0 : (mean1 < mean2 ? -500.0 : 0.0);
-    return { t: tVal, df: n1 + n2 - 2, pValue: mean1 === mean2 ? 1.0 : 1e-141, cohensD: cohen };
+    if (mean1 === mean2) {
+      return { t: 0.0, df: n1 + n2 - 2, pValue: 1.0, cohensD: 0.0, deterministic: true };
+    }
+    // Zero within-group variance with distinct sample means indicates deterministic separation
+    return {
+      t: mean1 > mean2 ? Infinity : -Infinity,
+      df: n1 + n2 - 2,
+      pValue: 0.0,
+      cohensD: mean1 > mean2 ? Infinity : -Infinity,
+      deterministic: true
+    };
   }
   const t = (mean1 - mean2) / seDiff;
   const df = Math.pow(se1 + se2, 2) / ((Math.pow(se1, 2) / (n1 - 1)) + (Math.pow(se2, 2) / (n2 - 1)));
@@ -98,7 +106,7 @@ function welchTTest(mean1, var1, n1, mean2, var2, n2) {
   const pValue = 2.0 * pValOneTailed;
   const pooledSD = Math.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2));
   const cohensD = pooledSD > 0 ? (mean1 - mean2) / pooledSD : 0.0;
-  return { t, df, pValue, cohensD };
+  return { t, df, pValue, cohensD, deterministic: false };
 }
 
 function calcStats(arr) {
@@ -149,9 +157,12 @@ const tt1 = welchTTest(s1Trained.mean, s1Trained.variance, s1Trained.n, s1Frozen
 console.log(`Trained Network Accuracy:            ${(s1Trained.mean * 100).toFixed(1)}% (Std: ${s1Trained.std.toFixed(4)})`);
 console.log(`Plasticity-Disabled Control:          ${(s1Frozen.mean * 100).toFixed(1)}% (Std: ${s1Frozen.std.toFixed(4)})`);
 console.log(`Statistical Hypothesis Testing:`);
-console.log(`  Welch's t(${tt1.df.toFixed(1)}) = ${tt1.t.toFixed(2)}, exact p = ${tt1.pValue.toExponential(4)}, Cohen's d = ${tt1.cohensD.toFixed(2)}`);
+const tDisplay1 = isFinite(tt1.t) ? tt1.t.toFixed(2) : (tt1.t > 0 ? '+Inf (deterministic)' : '-Inf');
+const pDisplay1 = tt1.pValue === 0 ? '0.0 (deterministic)' : tt1.pValue.toExponential(4);
+const dDisplay1 = isFinite(tt1.cohensD) ? tt1.cohensD.toFixed(2) : '+Inf';
+console.log(`  Welch's t(${tt1.df.toFixed(1)}) = ${tDisplay1}, exact p = ${pDisplay1}, Cohen's d = ${dDisplay1}`);
 
-if (s1Trained.mean >= 0.90 && tt1.pValue < 1e-10) {
+if (s1Trained.mean >= 0.90 && (tt1.pValue < 1e-10 || tt1.pValue === 0.0)) {
   console.log('PASS: Network reliably emits individual characters and terminates with <EOS> (p < 1e-10).\n');
 } else {
   console.error('FAIL: Part 1 did not meet accuracy or significance criteria.\n');
@@ -251,8 +262,8 @@ for (let seed = 0; seed < NUM_SEEDS; seed++) {
   const prompt = 'command left';
   const target = 'fly left';
 
-  for (let trial = 0; trial < 450; trial++) {
-    const temp = Math.max(0.15, 0.85 - (trial / 380) * 0.7);
+  for (let trial = 0; trial < 500; trial++) {
+    const temp = Math.max(0.12, 0.85 - (trial / 420) * 0.73);
     engine.generateResponse(prompt, { temperature: temp, maxLen: target.length + 2 });
     engine.rewardSequence(target);
   }

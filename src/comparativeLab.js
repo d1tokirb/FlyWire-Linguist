@@ -23,62 +23,64 @@ export class ComparativeLab {
     this.speedMode = options.speed || 'TURBO'; // 'INSTANT', 'HYPER', 'TURBO', 'FAST', 'NORMAL'
     this.timerId = null;
     this.currentTrialIndex = 0;
-    this.implantIntensity = options.implantIntensity || 'MEDIUM';
-    this.baseSeed = options.baseSeed || 1000;
+    this.implantIntensity = options.implantIntensity || options.intensity || 'MEDIUM';
+    this.baseSeed = options.baseSeed !== undefined ? options.baseSeed : (options.seed !== undefined ? options.seed : 42);
     this.activeSubjectIndex = 0; // Currently focused fly for deep telemetry
 
     this.onLabUpdate = null;
+    this.onTrialComplete = null;
 
-    // Standardized Mini-English Learning Schedule
+    // Standardized Mini-English Learning Schedule (Explicit, Unambiguous Compositional Cues)
     this.trainingSchedule = [
-      { prompt: 'craving sweet', target: 'i want sugar', desc: 'Agent i + action want + object sugar' },
-      { prompt: 'hydrate thirst', target: 'you want water', desc: 'Agent you + action want + object water' },
-      { prompt: 'possess drink', target: 'i have water', desc: 'Agent i + action have + object water' },
-      { prompt: 'locomote port', target: 'i go left', desc: 'Agent i + action go + object left' },
-      { prompt: 'partner craving', target: 'you want sugar', desc: 'Compositional variation: you + want + sugar' },
-      { prompt: 'steer partner', target: 'you go left', desc: 'Compositional variation: you + go + left' }
+      { prompt: 'self crave sweet', target: 'i want sugar', desc: 'Agent self (i) + action crave (want) + object sweet (sugar)' },
+      { prompt: 'other crave drink', target: 'you want water', desc: 'Agent other (you) + action crave (want) + object drink (water)' },
+      { prompt: 'self possess drink', target: 'i have water', desc: 'Agent self (i) + action possess (have) + object drink (water)' },
+      { prompt: 'self steer port', target: 'i go left', desc: 'Agent self (i) + action steer (go) + object port (left)' },
+      { prompt: 'other crave sweet', target: 'you want sugar', desc: 'Compositional variation: other (you) + crave (want) + sweet (sugar)' },
+      { prompt: 'other steer port', target: 'you go left', desc: 'Compositional variation: other (you) + steer (go) + port (left)' }
     ];
 
     // Held-out generalization challenge (Strictly unrewarded holdout R = 0, Temp = 0.0)
+    // Completely unambiguous semantic combination never presented during training
     this.heldOutChallenge = {
-      prompt: 'possess sweet',
+      prompt: 'other possess sweet',
       target: 'you have sugar',
-      desc: 'Novel compositional combination: you + have + sugar'
+      desc: 'Unseen compositional combination: other (you) + possess (have) + sweet (sugar)'
     };
 
     // Initialize subjects
     this.initDefaultCohort(options.includeScrambled !== false);
   }
 
-  // Initialize standard 4-fly or 5-fly cohort
+  // Initialize standard 4-fly or 5-fly cohort with IDENTICAL paired starting neural seeds
   initDefaultCohort(includeScrambled = true) {
     this.subjects = [
       new FlyInstance({
         id: 'fly_a_blank',
         name: 'Fly A',
         condition: 'BLANK',
-        seed: this.baseSeed + 100,
+        seed: this.baseSeed,
         implantIntensity: this.implantIntensity
       }),
       new FlyInstance({
         id: 'fly_b_vocab',
         name: 'Fly B',
         condition: 'VOCABULARY',
-        seed: this.baseSeed + 200,
+        seed: this.baseSeed,
         implantIntensity: this.implantIntensity
       }),
       new FlyInstance({
         id: 'fly_c_grammar',
         name: 'Fly C',
         condition: 'GRAMMAR',
-        seed: this.baseSeed + 300,
+        seed: this.baseSeed,
         implantIntensity: this.implantIntensity
       }),
       new FlyInstance({
         id: 'fly_d_combined',
         name: 'Fly D',
         condition: 'COMBINED',
-        seed: this.baseSeed + 400,
+        seed: this.baseSeed,
         implantIntensity: this.implantIntensity
       })
     ];
@@ -89,7 +91,7 @@ export class ComparativeLab {
           id: 'fly_e_scrambled',
           name: 'Fly E',
           condition: 'SCRAMBLED',
-          seed: this.baseSeed + 500,
+          seed: this.baseSeed,
           implantIntensity: this.implantIntensity
         })
       );
@@ -122,12 +124,14 @@ export class ComparativeLab {
     this.isRunning = true;
     this.scheduleNextStep(10);
     if (this.onLabUpdate) this.onLabUpdate();
+    if (this.onTrialComplete) this.onTrialComplete();
   }
 
   pause() {
     this.isRunning = false;
     if (this.timerId) clearTimeout(this.timerId);
     if (this.onLabUpdate) this.onLabUpdate();
+    if (this.onTrialComplete) this.onTrialComplete();
   }
 
   scheduleNextStep(delay = null) {
@@ -157,6 +161,7 @@ export class ComparativeLab {
     }
 
     if (this.onLabUpdate) this.onLabUpdate(results);
+    if (this.onTrialComplete) this.onTrialComplete(results);
 
     if (this.isRunning) {
       this.scheduleNextStep();
@@ -182,6 +187,7 @@ export class ComparativeLab {
     }
 
     if (this.onLabUpdate) this.onLabUpdate();
+    if (this.onTrialComplete) this.onTrialComplete();
     return completed;
   }
 

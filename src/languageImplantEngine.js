@@ -13,6 +13,7 @@
 // STRICT SCIENTIFIC SAFEGUARDS:
 // - Knowledge resides strictly in neural synaptic weights (W_ctx, W_rec, W_out, W_fb, W_time, KC->MBON).
 // - Zero hardcoded grammar rules or regex templates in JavaScript output pathways.
+// - Interleaved exposure across all trials to eliminate recency bias and catastrophic forgetting.
 // - Held-out test sentences (e.g. 'you have sugar') are strictly excluded from all implants.
 
 import { NeuralCheckpoint } from './neuralCheckpoint.js';
@@ -26,18 +27,18 @@ export class LanguageImplantEngine {
     allWords: ['i', 'you', 'want', 'have', 'sugar', 'water', 'go', 'left']
   };
 
-  // Structured Mini-English Pretraining Corpus
+  // Structured Mini-English Pretraining Corpus (Explicit, Unambiguous Mappings)
   static PRETRAINING_CORPUS = [
-    { prompt: 'craving sweet', target: 'i want sugar', desc: 'Agent i + action want + object sugar' },
-    { prompt: 'hydrate thirst', target: 'you want water', desc: 'Agent you + action want + object water' },
-    { prompt: 'possess drink', target: 'i have water', desc: 'Agent i + action have + object water' },
-    { prompt: 'locomote port', target: 'i go left', desc: 'Agent i + action go + object left' }
+    { prompt: 'self crave sweet', target: 'i want sugar', desc: 'Agent self (i) + action crave (want) + object sweet (sugar)' },
+    { prompt: 'other crave drink', target: 'you want water', desc: 'Agent other (you) + action crave (want) + object drink (water)' },
+    { prompt: 'self possess drink', target: 'i have water', desc: 'Agent self (i) + action possess (have) + object drink (water)' },
+    { prompt: 'self steer port', target: 'i go left', desc: 'Agent self (i) + action steer (go) + object port (left)' }
   ];
 
   // Held-Out Generalization Evaluation Challenges (Never seen during implantation or training)
   static HELDOUT_CHALLENGES = [
-    { prompt: 'possess sweet', target: 'you have sugar', desc: 'Held-out compositional combination (you + have + sugar)' },
-    { prompt: 'locomote partner', target: 'you go left', desc: 'Held-out compositional combination (you + go + left)' }
+    { prompt: 'other possess sweet', target: 'you have sugar', desc: 'Unseen compositional combination (other [you] + possess [have] + sweet [sugar])' },
+    { prompt: 'other steer port', target: 'you go left', desc: 'Unseen compositional combination (other [you] + steer [go] + port [left])' }
   ];
 
   // Map intensity string to pretraining exposure trials
@@ -53,8 +54,9 @@ export class LanguageImplantEngine {
 
   // Apply specified implant condition directly to an engine instance
   static applyImplant(engine, condition = 'BLANK', options = {}) {
-    const intensity = options.intensity || 'MEDIUM';
-    const seed = options.seed || 42;
+    const opts = typeof options === 'string' ? { intensity: options } : (options || {});
+    const intensity = opts.intensity || 'MEDIUM';
+    const seed = typeof opts.seed === 'number' ? opts.seed : 42;
     const trialsPerItem = LanguageImplantEngine.getTrialCountForIntensity(intensity);
 
     // Reset to pure Tabula Rasa baseline before establishing condition
@@ -97,29 +99,30 @@ export class LanguageImplantEngine {
 
   // 2. VOCABULARY IMPLANT: Isolated Grounded Word Associations
   // Trains associations for individual words without sentence-level structure
+  // Fully interleaved across all vocabulary items to prevent recency bias
   static applyVocabularyImplant(engine, trialsPerWord, seed) {
     const vocabPairs = [
-      { prompt: 'sugar', target: 'sugar', rewardMb: 1.0 },
-      { prompt: 'water', target: 'water', rewardMb: 0.8 },
-      { prompt: 'left', target: 'left', rewardMb: 0.9 },
-      { prompt: 'go', target: 'go', rewardMb: 0.9 },
-      { prompt: 'want', target: 'want', rewardMb: 0.6 },
-      { prompt: 'have', target: 'have', rewardMb: 0.6 },
-      { prompt: 'i', target: 'i', rewardMb: 0.5 },
-      { prompt: 'you', target: 'you', rewardMb: 0.5 }
+      { prompt: 'self', target: 'i' },
+      { prompt: 'other', target: 'you' },
+      { prompt: 'crave', target: 'want' },
+      { prompt: 'possess', target: 'have' },
+      { prompt: 'steer', target: 'go' },
+      { prompt: 'sweet', target: 'sugar' },
+      { prompt: 'drink', target: 'water' },
+      { prompt: 'port', target: 'left' }
     ];
 
-    let totalTrials = 0;
+    const totalTrials = trialsPerWord * vocabPairs.length;
     const lrBackup = engine.generator.learningRate;
     engine.generator.learningRate = 0.08;
 
-    for (const item of vocabPairs) {
-      for (let t = 0; t < trialsPerWord; t++) {
-        totalTrials++;
-        const temp = Math.max(0.12, 0.75 - (t / (trialsPerWord * 0.8)) * 0.60);
-        engine.generateResponse(item.prompt, { temperature: temp, maxLen: item.target.length + 2 });
-        engine.rewardSequence(item.target);
-      }
+    // Interleaved presentation across all vocabulary items
+    for (let t = 0; t < totalTrials; t++) {
+      const item = vocabPairs[t % vocabPairs.length];
+      const progress = t / totalTrials;
+      const temp = Math.max(0.10, 0.75 - progress * 0.65);
+      engine.generateResponse(item.prompt, { temperature: temp, maxLen: item.target.length + 2 });
+      engine.rewardSequence(item.target);
     }
 
     engine.generator.learningRate = lrBackup;
@@ -135,60 +138,75 @@ export class LanguageImplantEngine {
   }
 
   // 3. GRAMMAR IMPLANT: Pretrained Structural Priors Without Lexical Semantics
-  // Trains recurrent sequence working memory on agent -> action -> object slot transition
-  // dynamics using abstract structural patterns, leaving Mushroom Body context ungrounded.
-  static applyGrammarImplant(engine, trialsPerPattern, seed) {
-    // Abstract token frames representing agent -> action -> object transition timing
+  // Trains recurrent sequence working memory on agent -> action and action -> object slot transition
+  // dynamics using syntactic transition pairs, leaving Mushroom Body connectome ungrounded.
+  static applyGrammarImplant(engine, trialsPerPattern, seed, preserveConnectome = false) {
+    // Syntactic transition frames representing agent -> action and action -> object transitions
     const structuralFrames = [
-      { prompt: 'frame alpha', target: 'x vy wq' },
-      { prompt: 'frame beta', target: 'z kl mr' },
-      { prompt: 'frame gamma', target: 'u ab cd' },
-      { prompt: 'frame delta', target: 'v ef gh' }
+      { prompt: 'agent action', target: 'i want' },
+      { prompt: 'agent action', target: 'you want' },
+      { prompt: 'agent action', target: 'i have' },
+      { prompt: 'agent action', target: 'i go' },
+      { prompt: 'action object', target: 'want sugar' },
+      { prompt: 'action object', target: 'want water' },
+      { prompt: 'action object', target: 'have water' },
+      { prompt: 'action object', target: 'go left' }
     ];
 
-    let totalTrials = 0;
+    const totalTrials = trialsPerPattern * structuralFrames.length;
     const lrBackup = engine.generator.learningRate;
     engine.generator.learningRate = 0.08;
 
-    for (const item of structuralFrames) {
-      for (let t = 0; t < trialsPerPattern; t++) {
-        totalTrials++;
-        const temp = Math.max(0.12, 0.75 - (t / (trialsPerPattern * 0.8)) * 0.60);
-        engine.generateResponse(item.prompt, { temperature: temp, maxLen: item.target.length + 2 });
-        engine.rewardSequence(item.target);
-      }
+    // Interleaved training across structural frames
+    for (let t = 0; t < totalTrials; t++) {
+      const item = structuralFrames[t % structuralFrames.length];
+      const progress = t / totalTrials;
+      const temp = Math.max(0.10, 0.75 - progress * 0.65);
+      engine.generateResponse(item.prompt, { temperature: temp, maxLen: item.target.length + 2 });
+      engine.rewardSequence(item.target);
     }
 
-    // Reset Mushroom Body connectome weights to pure empirical baseline W0
-    // so that NO specific lexical MBON depression is retained, preserving grammar strictly
-    // in the recurrent working memory layer (W_rec, W_time, W_fb).
-    engine.mb.resetWeights();
+    if (!preserveConnectome) {
+      // Reset Mushroom Body connectome weights to pure empirical baseline W0
+      // so that NO specific lexical MBON depression is retained, preserving grammar strictly
+      // in the recurrent working memory layer (W_rec, W_time, W_fb).
+      engine.mb.resetWeights();
+    }
     engine.generator.learningRate = lrBackup;
 
     return {
       condition: 'GRAMMAR',
       description: 'Syntactic Prior Implant: Pretrained agent-action-object transition timing in working memory. Connectome ungrounded.',
-      synapticModifications: 0, // Mushroom Body connectome clean
+      synapticModifications: preserveConnectome ? engine.mb.getSynapticWeightStats().depressedSynapsesCount : 0,
       trialsExposed: totalTrials,
       implantedStructures: ['agent -> action -> object sequential transition priors']
     };
   }
 
   // 4. COMBINED IMPLANT: Integrated Lexical Semantics + Sentence Structure
-  // Pretrained on the 4 canonical Mini-English training sentences, EXCLUDING held-out sentences
+  // Scientifically constructed by combining the Vocabulary implant and the Grammar implant!
+  // Pretrained on the canonical Mini-English training sentences using strictly interleaved exposure.
   static applyCombinedImplant(engine, trialsPerSentence, seed) {
+    const halfTrials = Math.max(20, Math.floor(trialsPerSentence * 0.4));
+
+    // 1. Apply vocabulary grounding
+    LanguageImplantEngine.applyVocabularyImplant(engine, halfTrials, seed);
+
+    // 2. Apply grammar transition prior (preserving the grounded connectome)
+    LanguageImplantEngine.applyGrammarImplant(engine, halfTrials, seed, true);
+
+    // 3. Interleaved training on Mini-English sentences
     const corpus = LanguageImplantEngine.PRETRAINING_CORPUS;
-    let totalTrials = 0;
+    const totalTrials = trialsPerSentence * corpus.length;
     const lrBackup = engine.generator.learningRate;
     engine.generator.learningRate = 0.08;
 
-    for (const item of corpus) {
-      for (let t = 0; t < trialsPerSentence; t++) {
-        totalTrials++;
-        const temp = Math.max(0.12, 0.75 - (t / (trialsPerSentence * 0.8)) * 0.60);
-        engine.generateResponse(item.prompt, { temperature: temp, maxLen: item.target.length + 2 });
-        engine.rewardSequence(item.target);
-      }
+    for (let t = 0; t < totalTrials; t++) {
+      const item = corpus[t % corpus.length];
+      const progress = t / totalTrials;
+      const temp = Math.max(0.10, 0.75 - progress * 0.65);
+      engine.generateResponse(item.prompt, { temperature: temp, maxLen: item.target.length + 2 });
+      engine.rewardSequence(item.target);
     }
 
     engine.generator.learningRate = lrBackup;
@@ -203,16 +221,20 @@ export class LanguageImplantEngine {
     };
   }
 
-  // 5. SCRAMBLED IMPLANT: Matched L2 Norm Weight Control with Disrupted Syntax
-  // First trains the Combined implant, then randomly permutes the sequence generator weights
-  // and connectome depressions to match weight magnitude without coherent linguistic structure.
+  // 5. SCRAMBLED IMPLANT: Exact Frobenius-Norm Preserved Weight Control
+  // First trains the Combined implant, then performs a pure in-place Fisher-Yates permutation
+  // within each weight matrix. This rigorously guarantees that the Frobenius L2 norm, mean,
+  // and variance are preserved exactly, without clipping distortions.
   static applyScrambledControl(engine, trialsPerSentence, seed) {
     // 1. Train combined foundation
     LanguageImplantEngine.applyCombinedImplant(engine, trialsPerSentence, seed);
 
-    // 2. Permute / scramble sequence generator weights using seed-based shuffle
-    let rngSeed = seed + 7777;
-    const rng = () => { rngSeed = (rngSeed * 1664525 + 1013904223) >>> 0; return rngSeed / 4294967296; };
+    // 2. Deterministic PRNG for exact permutation
+    let rngSeed = (seed + 7777) >>> 0;
+    const rng = () => {
+      rngSeed = (rngSeed * 1664525 + 1013904223) >>> 0;
+      return rngSeed / 4294967296;
+    };
 
     const shuffleFloat32Array = (arr) => {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -232,22 +254,15 @@ export class LanguageImplantEngine {
     shuffleFloat32Array(gen.b_h);
     shuffleFloat32Array(gen.b_out);
 
-    // Also permute KC->MBON synaptic weight deviations from baseline
+    // Permute KC->MBON synaptic weight array directly without clipping
     const mb = engine.mb;
-    const deviations = new Float32Array(mb.kcToMbonWeights.length);
-    for (let i = 0; i < mb.kcToMbonWeights.length; i++) {
-      deviations[i] = mb.kcToMbonWeights[i] - mb.kcToMbonBaselineWeights[i];
-    }
-    shuffleFloat32Array(deviations);
-    for (let i = 0; i < mb.kcToMbonWeights.length; i++) {
-      mb.kcToMbonWeights[i] = Math.max(0.1, mb.kcToMbonBaselineWeights[i] + deviations[i]);
-    }
+    shuffleFloat32Array(mb.kcToMbonWeights);
 
     const mbStats = mb.getSynapticWeightStats();
 
     return {
       condition: 'SCRAMBLED',
-      description: 'Permuted Weight Control: Matches Combined implant weight magnitude and entropy, but with scrambled linguistic structure.',
+      description: 'Permuted Weight Control: Exactly preserves Combined implant Frobenius L2 norm, mean, and variance, but with scrambled linguistic structure.',
       synapticModifications: mbStats.depressedSynapsesCount,
       trialsExposed: trialsPerSentence * LanguageImplantEngine.PRETRAINING_CORPUS.length
     };

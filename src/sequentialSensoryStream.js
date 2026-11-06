@@ -118,8 +118,52 @@ export class SequentialSensoryStream {
   }
 
   // Get cumulative PN representation at the end of the input sequence
+  // Preserves multi-word phonemic patterns across Bank A (even PNs) and
+  // temporal sequence order across Bank B (odd PNs) without wiping earlier words on <EOS>.
   encodeStringToTerminalPN(text) {
-    const frames = this.encodeSequence(text);
-    return frames[frames.length - 1];
+    const cleanText = (text || '').toLowerCase().trim();
+    const words = cleanText.split(/\s+/).filter(Boolean);
+    const pn = new Float32Array(this.numPNs);
+
+    // Bank A (Even PNs: 0, 2, 4...): Cumulative multi-word phonemic pattern
+    // Each word occupies a distinct tonotopic slot offset to avoid interference
+    words.forEach((word, wordIdx) => {
+      const slotOffset = (wordIdx % 3) * 16;
+      for (let i = 0; i < word.length; i++) {
+        const ch = word[i];
+        const channels = this.phonemeMap[ch] || [10 + (ch.charCodeAt(0) % 35)];
+        for (const c of channels) {
+          const evenIdx = (((c + slotOffset) % 50) * 2);
+          if (evenIdx < this.numPNs) {
+            pn[evenIdx] = Math.max(pn[evenIdx], 0.90);
+          }
+        }
+      }
+    });
+
+    // Mark sequence termination boundary on channels 48 and 49 without clearing Bank A
+    if (96 < this.numPNs) pn[96] = 0.90; // Channel 48 * 2
+    if (98 < this.numPNs) pn[98] = 0.90; // Channel 49 * 2
+
+    // Bank B (Odd PNs: 1, 3, 5...): Sustained temporal trace preserving sequence order
+    const trace = new Float32Array(this.numPNs);
+    for (let i = 0; i < cleanText.length; i++) {
+      for (let k = 1; k < this.numPNs; k += 2) {
+        trace[k] *= 0.92;
+      }
+      const ch = cleanText[i];
+      const channels = this.phonemeMap[ch] || [10 + (ch.charCodeAt(0) % 35)];
+      for (const c of channels) {
+        const oddIdx = ((c % 50) * 2) + 1;
+        if (oddIdx < this.numPNs) {
+          trace[oddIdx] = Math.min(1.0, trace[oddIdx] + 0.60);
+        }
+      }
+    }
+    for (let k = 1; k < this.numPNs; k += 2) {
+      pn[k] = trace[k];
+    }
+
+    return pn;
   }
 }

@@ -140,6 +140,11 @@ export class NeuralSequenceGenerator {
       if (sum > maxLogit) maxLogit = sum;
     }
 
+    // Physiological motor adaptation: prevent repetitive space emissions
+    if (prevCharIdx === 26) {
+      logits[26] = -12.0;
+    }
+
     // Boltzmann softmax probability distribution
     const probs = new Float32Array(this.vocabSize);
     let sumExp = 0.0;

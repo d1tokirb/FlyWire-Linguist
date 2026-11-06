@@ -10,15 +10,10 @@
 export class NeuralCheckpoint {
   static FORMAT_VERSION = 'flywire-linguist-checkpoint-v1.0';
 
-  // Serialize a Float32Array to a compact standard array or Base64 string
+  // Serialize a Float32Array losslessly to a standard array preserving full precision
   static encodeFloat32Array(arr) {
     if (!arr) return [];
-    // Convert to standard Array with 5 decimal precision to balance size and accuracy
-    const out = new Array(arr.length);
-    for (let i = 0; i < arr.length; i++) {
-      out[i] = Math.round(arr[i] * 100000) / 100000;
-    }
-    return out;
+    return Array.from(arr);
   }
 
   // Deserialize to a new Float32Array
@@ -47,10 +42,16 @@ export class NeuralCheckpoint {
         flyId: metadata.flyId || 'fly_0',
         condition: metadata.condition || 'BLANK',
         name: metadata.name || 'Simulated Drosophila',
-        seed: metadata.seed || 42,
+        seed: metadata.seed || gen.seed || 42,
+        rngState: gen.seed,
         implantIntensity: metadata.implantIntensity || 'NONE',
         notes: metadata.notes || 'Full connectome and sequence generator weight checkpoint',
         trialsTrained: metadata.trialsTrained || engine.totalEpisodesRun || 0,
+        totalTrials: metadata.totalTrials || 0,
+        totalSuccesses: metadata.totalSuccesses || 0,
+        rollingAcc: metadata.rollingAcc || 0.0,
+        trialsToCriterion: metadata.trialsToCriterion || null,
+        accuracyHistory: metadata.accuracyHistory || [],
         ...metadata
       },
       connectome: {
@@ -68,6 +69,7 @@ export class NeuralCheckpoint {
         maxSequenceLength: gen.maxSequenceLength,
         learningRate: gen.learningRate,
         valueBaseline: gen.valueBaseline,
+        seed: gen.seed,
         W_ctx: NeuralCheckpoint.encodeFloat32Array(gen.W_ctx),
         W_time: NeuralCheckpoint.encodeFloat32Array(gen.W_time),
         W_fb: NeuralCheckpoint.encodeFloat32Array(gen.W_fb),
@@ -84,6 +86,11 @@ export class NeuralCheckpoint {
         lexiconSize: engine.lexicon ? engine.lexicon.size : 0
       }
     };
+  }
+
+  // Restore checkpoint alias for seamless compatibility
+  static restoreCheckpoint(engine, checkpointData) {
+    return NeuralCheckpoint.loadCheckpoint(engine, checkpointData);
   }
 
   // Restore weights and state into an engine instance from checkpoint data
@@ -128,6 +135,9 @@ export class NeuralCheckpoint {
 
     if (typeof cGen.valueBaseline === 'number') {
       gen.valueBaseline = cGen.valueBaseline;
+    }
+    if (typeof cGen.seed === 'number') {
+      gen.seed = cGen.seed;
     }
 
     // 3. Restore telemetry states

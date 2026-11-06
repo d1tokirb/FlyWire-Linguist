@@ -251,8 +251,8 @@ export class SequentialLanguageEngine {
     }
     targetIndices.push(27); // Terminal <EOS>
 
-    // Step-wise shaping rewards:
-    // Matches receive +1.0 PAM dopamine; mismatches receive -0.3 PPL1 aversive shock
+    // Step-wise shaping rewards with sequence-level credit assignment:
+    // Matches receive +1.0 PAM dopamine; mismatches receive -0.20 PPL1 aversive shock
     const stepRewards = [];
     let matchCount = 0;
 

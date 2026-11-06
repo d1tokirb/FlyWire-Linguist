@@ -23,8 +23,17 @@ export class App {
     this.tutor.setSpeed('TURBO');
 
     // Multi-subject comparative lab coordinator
-    this.lab = new ComparativeLab({ seed: 42, intensity: 'MEDIUM', includeScrambled: true });
+    this.lab = new ComparativeLab({
+      seed: 42,
+      baseSeed: 42,
+      intensity: 'MEDIUM',
+      implantIntensity: 'MEDIUM',
+      includeScrambled: true
+    });
     this.lab.setSpeed('TURBO');
+    this.lab.onLabUpdate = () => {
+      this.comparativeUI.render();
+    };
     this.lab.onTrialComplete = () => {
       this.comparativeUI.render();
     };
@@ -46,13 +55,8 @@ export class App {
     this.comparativeUI.render();
     this.ui.updateDashboard();
 
-    // Autostart comparative lab on initial load
-    setTimeout(() => {
-      if (this.currentView === 'COMPARATIVE' && !this.lab.isRunning) {
-        this.lab.start();
-        this.comparativeUI.updateControls();
-      }
-    }, 600);
+    // Mandatory startup flow: Open Experiment Setup interface before running simulation
+    this.setupUI.show();
   }
 
   setView(viewMode) {
@@ -76,10 +80,11 @@ export class App {
     const fly = this.lab.subjects[flyIdx];
     if (!fly) return;
 
-    // Point single fly telemetry and tutor to this subject's engine
-    this.engine = fly.engine;
-    this.ui.engine = fly.engine;
-    this.tutor.engine = fly.engine;
+    // Clone fly's state into the single-fly engine to avoid contaminating the comparative cohort
+    this.engine = new SequentialLanguageEngine({ mode: 'SEQUENTIAL', seed: fly.seed });
+    NeuralCheckpoint.cloneState(fly.engine, this.engine);
+    this.ui.engine = this.engine;
+    this.tutor.engine = this.engine;
 
     this.engine.onStateChange = () => {
       this.ui.updateDashboard();
@@ -87,7 +92,7 @@ export class App {
 
     const stageNameEl = document.getElementById('val-stage-name');
     if (stageNameEl) {
-      stageNameEl.textContent = `${fly.name} [${fly.condition}]`;
+      stageNameEl.textContent = `Inspecting: ${fly.name} [${fly.condition}] (Isolated Clone)`;
       stageNameEl.style.color = fly.color;
     }
 
@@ -103,9 +108,14 @@ export class App {
       this.lab.pause();
       this.lab = new ComparativeLab({
         seed: config.seed,
+        baseSeed: config.seed,
         intensity: config.intensity,
+        implantIntensity: config.intensity,
         includeScrambled: config.includeScrambled
       });
+      this.lab.onLabUpdate = () => {
+        this.comparativeUI.render();
+      };
       this.lab.onTrialComplete = () => {
         this.comparativeUI.render();
       };
@@ -122,7 +132,7 @@ export class App {
       if (this.lab && this.lab.isRunning) {
         this.lab.pause();
       }
-      this.engine = new SequentialLanguageEngine({ mode: 'SEQUENTIAL' });
+      this.engine = new SequentialLanguageEngine({ mode: 'SEQUENTIAL', seed: config.seed });
       this.ui.engine = this.engine;
       this.tutor.engine = this.engine;
       this.engine.onStateChange = () => {
@@ -130,9 +140,12 @@ export class App {
       };
 
       if (config.importedCheckpoint) {
-        NeuralCheckpoint.restoreCheckpoint(this.engine, config.importedCheckpoint);
+        NeuralCheckpoint.loadCheckpoint(this.engine, config.importedCheckpoint);
       } else {
-        LanguageImplantEngine.applyImplant(this.engine, config.condition, config.intensity);
+        LanguageImplantEngine.applyImplant(this.engine, config.condition, {
+          intensity: config.intensity,
+          seed: config.seed
+        });
       }
 
       const stageNameEl = document.getElementById('val-stage-name');

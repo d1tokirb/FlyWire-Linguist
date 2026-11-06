@@ -96,9 +96,17 @@ function welchTTest(mean1, var1, n1, mean2, var2, n2) {
   const se2 = var2 / n2;
   const seDiff = Math.sqrt(se1 + se2);
   if (seDiff === 0) {
-    const tVal = mean1 > mean2 ? 1936.49 : (mean1 < mean2 ? -1936.49 : 0.0);
-    const cohen = mean1 > mean2 ? 500.0 : (mean1 < mean2 ? -500.0 : 0.0);
-    return { t: tVal, df: n1 + n2 - 2, pValue: mean1 === mean2 ? 1.0 : 1e-141, cohensD: cohen };
+    if (mean1 === mean2) {
+      return { t: 0.0, df: n1 + n2 - 2, pValue: 1.0, cohensD: 0.0, deterministic: true };
+    }
+    // Zero within-group variance with distinct sample means indicates deterministic separation
+    return {
+      t: mean1 > mean2 ? Infinity : -Infinity,
+      df: n1 + n2 - 2,
+      pValue: 0.0,
+      cohensD: mean1 > mean2 ? Infinity : -Infinity,
+      deterministic: true
+    };
   }
   const t = (mean1 - mean2) / seDiff;
   const df = Math.pow(se1 + se2, 2) / ((Math.pow(se1, 2) / (n1 - 1)) + (Math.pow(se2, 2) / (n2 - 1)));
@@ -106,7 +114,7 @@ function welchTTest(mean1, var1, n1, mean2, var2, n2) {
   const pValue = 2.0 * pValOneTailed;
   const pooledSD = Math.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2));
   const cohensD = pooledSD > 0 ? (mean1 - mean2) / pooledSD : 0.0;
-  return { t, df, pValue, cohensD };
+  return { t, df, pValue, cohensD, deterministic: false };
 }
 
 function calcStats(arr) {
@@ -117,17 +125,17 @@ function calcStats(arr) {
   return { mean, variance, std, n };
 }
 
-// Training corpus
+// Training corpus (unambiguous, explicit compositional mappings)
 const trainingCorpus = [
-  { prompt: 'craving sweet', target: 'i want sugar' },
-  { prompt: 'hydrate thirst', target: 'you want water' },
-  { prompt: 'possess drink', target: 'i have water' },
-  { prompt: 'locomote port', target: 'i go left' }
+  { prompt: 'self crave sweet', target: 'i want sugar' },
+  { prompt: 'other crave drink', target: 'you want water' },
+  { prompt: 'self possess drink', target: 'i have water' },
+  { prompt: 'self steer port', target: 'i go left' }
 ];
 
 // Held-out test sentence (compositional combination never seen during implantation or training)
 const heldOutChallenge = {
-  prompt: 'possess sweet',
+  prompt: 'other possess sweet',
   target: 'you have sugar'
 };
 
@@ -211,26 +219,33 @@ const sGrammar = calcStats(results.GRAMMAR.charAcc);
 const sVocab = calcStats(results.VOCABULARY.charAcc);
 const sScrambled = calcStats(results.SCRAMBLED.charAcc);
 
+function fmtStat(tt) {
+  const tStr = isFinite(tt.t) ? tt.t.toFixed(2) : (tt.t > 0 ? '+Inf' : '-Inf');
+  const pStr = tt.pValue === 0 ? '0.0 (deterministic)' : tt.pValue.toExponential(4);
+  const dStr = isFinite(tt.cohensD) ? tt.cohensD.toFixed(2) : '+Inf';
+  return `Welch's t(${tt.df.toFixed(1)}) = ${tStr}, exact p = ${pStr}, Cohen's d = ${dStr}`;
+}
+
 // 1. Structured vs Scrambled Control (Proves linguistic structure matters vs arbitrary weight noise)
 const ttStructVsScram = welchTTest(sCombined.mean, sCombined.variance, sCombined.n,
                                    sScrambled.mean, sScrambled.variance, sScrambled.n);
 console.log(`1. Structural Integrity (Combined vs Scrambled Weight Control):`);
 console.log(`   Combined: ${(sCombined.mean * 100).toFixed(1)}% vs Scrambled: ${(sScrambled.mean * 100).toFixed(1)}%`);
-console.log(`   Welch's t(${ttStructVsScram.df.toFixed(1)}) = ${ttStructVsScram.t.toFixed(2)}, exact p = ${ttStructVsScram.pValue.toExponential(4)}, Cohen's d = ${ttStructVsScram.cohensD.toFixed(2)}`);
+console.log(`   ${fmtStat(ttStructVsScram)}`);
 
 // 2. Blank vs Scrambled Control
 const ttBlankVsScram = welchTTest(sBlank.mean, sBlank.variance, sBlank.n,
                                   sScrambled.mean, sScrambled.variance, sScrambled.n);
 console.log(`2. Baseline Adaptation (Blank vs Scrambled Control):`);
 console.log(`   Blank: ${(sBlank.mean * 100).toFixed(1)}% vs Scrambled: ${(sScrambled.mean * 100).toFixed(1)}%`);
-console.log(`   Welch's t(${ttBlankVsScram.df.toFixed(1)}) = ${ttBlankVsScram.t.toFixed(2)}, exact p = ${ttBlankVsScram.pValue.toExponential(4)}, Cohen's d = ${ttBlankVsScram.cohensD.toFixed(2)}`);
+console.log(`   ${fmtStat(ttBlankVsScram)}`);
 
 // 3. Cognitive Constraint & Transfer Comparison (Blank vs Combined)
 const ttBlankVsComb = welchTTest(sBlank.mean, sBlank.variance, sBlank.n,
                                  sCombined.mean, sCombined.variance, sCombined.n);
 console.log(`3. Transfer Effect (Blank Tabula Rasa vs Combined Foundation):`);
 console.log(`   Blank: ${(sBlank.mean * 100).toFixed(1)}% vs Combined: ${(sCombined.mean * 100).toFixed(1)}%`);
-console.log(`   Welch's t(${ttBlankVsComb.df.toFixed(1)}) = ${ttBlankVsComb.t.toFixed(2)}, exact p = ${ttBlankVsComb.pValue.toExponential(4)}, Cohen's d = ${ttBlankVsComb.cohensD.toFixed(2)}`);
+console.log(`   ${fmtStat(ttBlankVsComb)}`);
 
 console.log('\n--- PART 4: Scientific Acceptance Criteria ---');
 
