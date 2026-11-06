@@ -10,6 +10,7 @@
     "test": "node scripts/run_all_benchmarks.mjs",
     "benchmark:2afc": "node scripts/benchmark_two_choice_associative_learning.mjs",
     "benchmark:sequence": "node scripts/benchmark_compositional_generalization.mjs",
+    "benchmark:writing": "node scripts/benchmark_sequential_neural_learning.mjs",
     "verify:connectome": "python3 scripts/extract_flywire_synapses.py --verify"
   },
   "keywords": [

@@ -2,17 +2,17 @@
 // Minimalist, high-performance orchestration of connectome language engine,
 // insectoid speech synthesis, and real-time telemetry.
 
-import { SynapticLanguageEngine } from './synapticLanguageEngine.js';
+import { SequentialLanguageEngine } from './sequentialLanguageEngine.js';
+import { SequentialCurriculumTutor } from './sequentialCurriculumTutor.js';
 import { DrosophilaSpeechSynth } from './drosophilaSpeechSynth.js';
 import { TelemetryUI } from './telemetryUI.js';
-import { CurriculumTutorBot } from './curriculumTutorBot.js';
 
 export class App {
   constructor() {
-    this.engine = new SynapticLanguageEngine();
+    this.engine = new SequentialLanguageEngine({ mode: 'SEQUENTIAL' });
     this.speech = new DrosophilaSpeechSynth();
     this.ui = new TelemetryUI(this.engine, this.speech);
-    this.tutor = new CurriculumTutorBot(this.engine, this.speech, this.ui);
+    this.tutor = new SequentialCurriculumTutor(this.engine, this.speech, this.ui);
     this.tutor.setSpeed('TURBO');
 
     this.engine.onStateChange = () => {
@@ -43,7 +43,7 @@ export class App {
       const response = this.engine.generateResponse(prompt);
       this.ui.addFlyMessage(response);
       if (this.speech && !this.speech.isMuted) {
-        this.speech.speak(response.text, response.stage);
+        this.speech.speak(response.text, 1);
       }
       this.ui.updateDashboard();
     };
@@ -60,6 +60,18 @@ export class App {
         handleSendMessage(btn.dataset.phrase);
       });
     });
+
+    const btnToggleMode = document.getElementById('btn-toggle-mode');
+    if (btnToggleMode) {
+      btnToggleMode.addEventListener('click', () => {
+        const newMode = (this.engine.mode === 'SEQUENTIAL') ? 'DISCRETE_MBON' : 'SEQUENTIAL';
+        this.engine.setMode(newMode);
+        btnToggleMode.textContent = (newMode === 'SEQUENTIAL')
+          ? '[Mode: Sequential Neural Writing]'
+          : '[Mode: Discrete 21-MBON Baseline]';
+        this.ui.updateDashboard();
+      });
+    }
 
     const btnAudio = document.getElementById('btn-audio');
     if (btnAudio) {

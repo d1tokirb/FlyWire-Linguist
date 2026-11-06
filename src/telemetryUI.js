@@ -124,12 +124,19 @@ export class TelemetryUI {
 
     const entry = document.createElement('div');
     entry.className = 'log-entry fly-entry';
-    const chosenInfo = res.chosenMBON ? ` | Motor Action: ${res.chosenMBON}` : (res.winningMBON ? ` | MBON: ${res.winningMBON}` : '');
-    const contrastInfo = (typeof res.relativeContrast === 'number') ? ` | Contrast: ${(res.relativeContrast * 100).toFixed(1)}%` : '';
+    let detailInfo = '';
+    if (res.mode === 'SEQUENTIAL') {
+      const traceStr = res.timeline ? res.timeline.map(s => s.symbol).join(' -> ') : '';
+      detailInfo = `Sequential Neural Writing | Trace: ${traceStr} | KCs: ${res.activeKCCount || 0}/2,597`;
+    } else {
+      const chosenInfo = res.chosenMBON ? ` | Motor Action: ${res.chosenMBON}` : (res.winningMBON ? ` | MBON: ${res.winningMBON}` : (res.topMBON ? ` | MBON: ${res.topMBON}` : ''));
+      const contrastInfo = (typeof res.relativeContrast === 'number') ? ` | Contrast: ${(res.relativeContrast * 100).toFixed(1)}%` : '';
+      detailInfo = `Discrete MBON Baseline${chosenInfo}${contrastInfo} | KCs: ${res.activeKCCount || res.kcActive || 0}/2,597`;
+    }
     entry.innerHTML = `
       <span class="log-time">${this.getTimeStr()}</span>
       <span class="log-speaker fly">[FLY]</span>
-      <span class="log-msg"><b>"${this.escapeHTML(res.text)}"</b> (${res.circuit}${chosenInfo}${contrastInfo}, Conf: ${res.confidence}%, KCs: ${res.kcActive || 0}/2,597)</span>
+      <span class="log-msg"><b>"${this.escapeHTML(res.text)}"</b> (${detailInfo})</span>
     `;
     this.chatThread.appendChild(entry);
     this.scrollToBottom();
@@ -196,6 +203,36 @@ export class TelemetryUI {
     const score = this.engine.getFluencyScore();
 
     // Top Header Status Summary
+    const modeEl = document.getElementById('val-engine-mode');
+    if (modeEl) {
+      modeEl.textContent = this.engine.mode === 'SEQUENTIAL' ? 'Sequential (28 Actions)' : 'Discrete MBON (21 Classes)';
+    }
+
+    const lastSeqEl = document.getElementById('val-last-sequence');
+    if (lastSeqEl) {
+      if (this.engine.lastResponse) {
+        lastSeqEl.textContent = `"${this.engine.lastResponse.text}" (${this.engine.lastResponse.stepsCount || 1} chars)`;
+      } else {
+        lastSeqEl.textContent = '--';
+      }
+    }
+
+    // Neural Emission Timeline Trace
+    const timelineEl = document.getElementById('char-timeline-display');
+    if (timelineEl) {
+      if (this.engine.lastResponse && this.engine.lastResponse.timeline && this.engine.lastResponse.timeline.length > 0) {
+        timelineEl.innerHTML = this.engine.lastResponse.timeline.map((step) => {
+          const isEos = step.symbol === '<EOS>';
+          const isSpace = step.symbol === '[space]' || step.char === ' ';
+          const sym = isEos ? '&lt;EOS&gt;' : (isSpace ? '[space]' : this.escapeHTML(step.char));
+          const pillClass = isEos ? 'time-pill eos' : (isSpace ? 'time-pill space' : 'time-pill char');
+          return `<span class="${pillClass}">t${step.step}:${sym} (${step.confidence}%)</span>`;
+        }).join(' &rarr; ');
+      } else {
+        timelineEl.textContent = '[Awaiting neural emission]';
+      }
+    }
+
     const stageEl = document.getElementById('val-stage-name');
     if (stageEl) {
       stageEl.textContent = stage.name;

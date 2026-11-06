@@ -356,9 +356,12 @@ export class MushroomBodyConnectome {
   }
 
   // Forward Pass: PNs -> KCs (with APL sparse inhibition) -> MBONs
-  forward(tokens, temperature = 0.0) {
-    // 1. Sensory encoding
-    this.encodeTokensToPNs(tokens);
+  // If tokens is null or undefined, preserves any externally provided pnActivity.
+  forward(tokens = null, temperature = 0.0) {
+    // 1. Sensory encoding (only if tokens are explicitly provided)
+    if (tokens !== null) {
+      this.encodeTokensToPNs(tokens);
+    }
 
     // 2. Kenyon Cell integration with biological Rin input resistance scaling
     let totalExcitation = 0;

@@ -14,12 +14,15 @@
           <span class="txt-bold">FLYWIRE-LINGUIST v1.0</span> // Drosophila Mushroom Body Connectome (FAFB v783)
         </div>
         <div class="hdr-actions">
+          <button type="button" id="btn-toggle-mode" class="txt-btn btn-primary">[Mode: Sequential Neural Writing]</button>
           <button type="button" id="btn-audio" class="txt-btn">[Audio: On]</button>
           <button type="button" id="btn-export-lexicon" class="txt-btn">[Export Brain JSON]</button>
           <button type="button" id="btn-reset-brain" class="txt-btn btn-danger">[Reset Tabula Rasa]</button>
         </div>
       </div>
       <div class="status-bar">
+        <span>MODE: <b id="val-engine-mode" class="c-blue">Sequential (28 Actions)</b></span>
+        <span class="sep">|</span>
         <span>STATE: <b id="val-stage-name">Tabula Rasa</b></span>
         <span class="sep">|</span>
         <span>PLASTICITY (LTD): <b id="val-fluency-score">0.0%</b></span>
@@ -34,7 +37,7 @@
         <span class="sep">|</span>
         <span>PPL1: <b id="val-ppl1-aversion">10%</b></span>
         <span class="sep">|</span>
-        <span>WINNING MBON: <b id="val-winning-mbon">Resting</b></span>
+        <span>LAST EMISSION: <b id="val-last-sequence">--</b></span>
       </div>
     </header>
 
@@ -46,7 +49,7 @@
       <section id="col-left">
         <!-- TEACHING & CURRICULUM CONTROLS -->
         <div class="panel-section">
-          <div class="sec-title">[AUTONOMOUS MASTER TEACHER: 8-STAGE PEDAGOGICAL CURRICULUM]</div>
+          <div class="sec-title">[AUTONOMOUS MASTER TEACHER: 8-STAGE SEQUENTIAL NEURAL WRITING SYLLABUS]</div>
           <div class="ctrl-row">
             <button type="button" id="btn-toggle-tutor" class="txt-btn btn-primary">[Start Autonomous Teacher]</button>
             <span>Speed:</span>
@@ -66,10 +69,10 @@
           <div class="status-row" style="margin-top: 4px;">
             <span>Status: <b id="tutor-status-badge">Idle</b></span>
             <span class="sep">|</span>
-            <span>Mastery: <b id="tutor-progress-pct">0 / 56 (0.0%)</b></span>
+            <span>Mastery: <b id="tutor-progress-pct">0 / 34 (0.0%)</b></span>
           </div>
           <div class="status-row" style="margin-top: 2px;">
-            <span id="tutor-lesson-label" class="c-blue">Stage 1: Two-Alternative Forced Choice (2AFC Steering & Appetitive)</span>
+            <span id="tutor-lesson-label" class="c-blue">Stage A: Basic Symbol Production (Single Characters + &lt;EOS&gt;)</span>
           </div>
           <div class="ascii-bar-row">
             Progress: <span id="tutor-ascii-bar" class="ascii-bar">[----------------------------------------] 0.0%</span>
@@ -88,28 +91,32 @@
         <div class="panel-section">
           <form id="chat-form" class="cmd-row" autocomplete="off">
             <span class="prompt-sym">&gt;</span>
-            <input type="text" id="chat-input" class="txt-input" placeholder="Type sensory input / command (e.g. 'go left', 'want sugar', 'hello fly')..." autocomplete="off" />
+            <input type="text" id="chat-input" class="txt-input" placeholder="Type prompt (e.g. 'type a', 'spell hi', 'write left', 'dax', 'command left')..." autocomplete="off" />
             <button type="submit" id="btn-chat-send" class="txt-btn btn-primary">[Send Input]</button>
           </form>
+          <div class="timeline-row">
+            <span class="sub-label">Neural Emission Trace:</span>
+            <div id="char-timeline-display" class="timeline-display">[Awaiting neural emission]</div>
+          </div>
           <div class="token-row">
             <span class="sub-label">Cues:</span>
-            <button type="button" class="tok-btn" data-phrase="go">[go]</button>
-            <button type="button" class="tok-btn" data-phrase="stop">[stop]</button>
-            <button type="button" class="tok-btn" data-phrase="left">[left]</button>
-            <button type="button" class="tok-btn" data-phrase="right">[right]</button>
-            <button type="button" class="tok-btn" data-phrase="sugar">[sugar]</button>
-            <button type="button" class="tok-btn" data-phrase="sweet">[sweet]</button>
-            <button type="button" class="tok-btn" data-phrase="hello">[hello]</button>
-            <button type="button" class="tok-btn" data-phrase="human">[human]</button>
-            <button type="button" class="tok-btn" data-phrase="fly">[fly]</button>
-            <button type="button" class="tok-btn" data-phrase="speak">[speak]</button>
-            <button type="button" class="tok-btn" data-phrase="good">[good]</button>
+            <button type="button" class="tok-btn" data-phrase="type a">[type a]</button>
+            <button type="button" class="tok-btn" data-phrase="spell hi">[spell hi]</button>
+            <button type="button" class="tok-btn" data-phrase="spell go">[spell go]</button>
+            <button type="button" class="tok-btn" data-phrase="write left">[write left]</button>
+            <button type="button" class="tok-btn" data-phrase="write right">[write right]</button>
+            <button type="button" class="tok-btn" data-phrase="write sugar">[write sugar]</button>
+            <button type="button" class="tok-btn" data-phrase="dax">[dax]</button>
+            <button type="button" class="tok-btn" data-phrase="command left">[command left]</button>
+            <button type="button" class="tok-btn" data-phrase="dont go left">[dont go left]</button>
+            <button type="button" class="tok-btn" data-phrase="please go left">[please go left]</button>
           </div>
           <div class="manual-reward-row">
             <span class="sub-label">Modulation:</span>
             <button type="button" id="btn-sucrose" class="txt-btn btn-success">[+PAM Sucrose Reward (+35%)]</button>
             <button type="button" id="btn-aversion" class="txt-btn btn-warning">[-PPL1 Aversion Shock (+25%)]</button>
           </div>
+        </div>
         </div>
       </section>
 

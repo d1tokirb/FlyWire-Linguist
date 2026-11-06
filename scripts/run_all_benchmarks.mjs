@@ -41,6 +41,10 @@ const suite = [
   {
     name: '6. Milestone B: Multi-Word, Bidirectional & XOR Negation Benchmark (N=30)',
     cmd: 'node scripts/benchmark_compositional_generalization.mjs'
+  },
+  {
+    name: '7. Milestone C: Sequential Neural Writing & Character-by-Character Acquisition (N=30)',
+    cmd: 'node scripts/benchmark_sequential_neural_learning.mjs'
   }
 ];
 
